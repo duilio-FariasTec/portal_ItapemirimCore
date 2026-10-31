@@ -9,24 +9,36 @@ API REST em **.NET 10** construída segundo os princípios de **Clean Architectu
 Antes de iniciar, certifique-se de ter instalado no seu ambiente de desenvolvimento:
 
 1. **.NET 10 SDK** (ou versão mais recente):
-   * [Download Oficial .NET SDK (Microsoft)](https://dotnet.microsoft.com/download)
-   * Para validar a instalação, execute no terminal:
+   * **Windows / Geral**: [Download Oficial .NET SDK (Microsoft)](https://dotnet.microsoft.com/download)
+   * **macOS (via Homebrew)**:
+     ```bash
+     brew install --cask dotnet-sdk
+     ```
+     *(Ou baixe o instalador `.pkg` para processadores **Apple Silicon (Arm64 - M1/M2/M3/M4)** ou **Intel (x64)** no site da Microsoft)*.
+   * Para validar a instalação em qualquer sistema:
      ```bash
      dotnet --version
      # Deve exibir 10.0.x
      ```
 
 2. **Git**:
-   * [Download Oficial do Git](https://git-scm.com/downloads)
+   * **Windows**: [Download Oficial do Git](https://git-scm.com/downloads)
+   * **macOS**: Já incluso com o Xcode Command Line Tools (`xcode-select --install`) ou via Homebrew (`brew install git`).
    * Para validar:
      ```bash
      git --version
      ```
 
-3. **Editor / IDE Recomendada**:
-   * [Visual Studio 2022 / 2026](https://visualstudio.microsoft.com/) (com a carga de trabalho *ASP.NET e desenvolvimento Web*)
-   * [Visual Studio Code](https://code.visualstudio.com/) (com a extensão *C# Dev Kit*)
-   * [JetBrains Rider](https://www.jetbrains.com/rider/)
+3. **Dependências para o Seed no macOS / Linux (Opcional)**:
+   * Para rodar o script de seed automatizado [seed_database_api.sh](file:///c:/Users/Duilio%20Farias/source/repos/portal_ItapemirimCore/scripts/seed_database_api.sh):
+     ```bash
+     brew install jq curl
+     ```
+
+4. **Editor / IDE Recomendada**:
+   * [Visual Studio Code](https://code.visualstudio.com/) (com a extensão *C# Dev Kit*) — excelente para macOS e Windows
+   * [JetBrains Rider](https://www.jetbrains.com/rider/) (multiplataforma)
+   * [Visual Studio 2022 / 2026](https://visualstudio.microsoft.com/) (apenas Windows)
 
 > [!TIP]
 > **Banco de Dados Local Zero-Config**:
@@ -71,17 +83,32 @@ dotnet test Itapemirim.Ani.sln
 
 ### 4. Executar a API
 
-Navegue até a pasta da API e execute:
-
+#### No Windows (PowerShell / Prompt):
 ```powershell
 cd .\src\Itapemirim.Ani.Api
 dotnet run
 ```
-
-*(Ou diretamente a partir da raiz da solução sem precisar mudar de pasta)*:
-```bash
+*(Ou diretamente da raiz)*:
+```powershell
 dotnet run --project .\src\Itapemirim.Ani.Api\Itapemirim.Ani.Api.csproj
 ```
+
+#### No macOS / Linux (Terminal / Zsh / Bash):
+```bash
+cd src/Itapemirim.Ani.Api
+dotnet run
+```
+*(Ou diretamente da raiz)*:
+```bash
+dotnet run --project src/Itapemirim.Ani.Api/Itapemirim.Ani.Api.csproj
+```
+
+> [!NOTE]
+> **Certificados HTTPS no macOS**:
+> Se for a primeira vez rodando uma aplicação ASP.NET Core no Mac, execute o comando abaixo para confiar no certificado de desenvolvimento SSL local:
+> ```bash
+> dotnet dev-certs https --trust
+> ```
 
 ---
 
@@ -165,3 +192,39 @@ A infraestrutura possui suporte a provedores múltiplos configurável pelo arqui
 * **GUIDs Públicos**: Todas as rotas de API expõem exclusivamente identificadores em formato **GUID / UUID** (`UsuarioGuid`, `PerfilGuid`, `PermissaoGuid`), impedindo ataques de enumeração sequencial ou força bruta.
 * **Hash de Senhas**: Senhas são criptografadas com **BCrypt** com salt individual.
 * **Auditoria de Operações**: Todas as ações críticas (inclusão, alteração, remoção e tentativas de login) são auditadas em banco de dados.
+
+---
+
+## 🍎 Guia Rápido para macOS (Terminal / Zsh)
+
+Se você estiver em um Mac (Apple Silicon M1/M2/M3/M4 ou Intel), você pode rodar todo o fluxo pelo terminal com a sequência abaixo:
+
+```bash
+# 1. Instalar o .NET 10 SDK e utilitários (caso ainda não tenha via Homebrew)
+brew install --cask dotnet-sdk
+brew install git jq curl
+
+# 2. Confiar no certificado HTTPS de desenvolvimento local do Mac
+dotnet dev-certs https --trust
+
+# 3. Clonar o repositório
+git clone https://github.com/duilio-FariasTec/portal_ItapemirimCore.git
+cd portal_ItapemirimCore
+
+# 4. Compilar a solução
+dotnet build Itapemirim.Ani.sln
+
+# 5. Executar os testes unitários
+dotnet test Itapemirim.Ani.sln
+
+# 6. Rodar a API
+cd src/Itapemirim.Ani.Api
+dotnet run
+```
+
+Em uma **segunda aba do terminal** (mantendo a API rodando na primeira), execute a carga inicial de dados:
+```bash
+cd portal_ItapemirimCore
+chmod +x ./scripts/seed_database_api.sh
+./scripts/seed_database_api.sh
+```
