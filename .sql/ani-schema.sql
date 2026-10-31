@@ -94,6 +94,7 @@ CREATE TABLE [ani].[Permissao]
     [Descricao]          NVARCHAR(500) NULL,
     [Recurso]            NVARCHAR(100) NOT NULL,
     [Acao]               NVARCHAR(50) NOT NULL,
+    [DscUrl]             NVARCHAR(250) NULL,
     [Ativo]              BIT NOT NULL
         CONSTRAINT [DF_Permissao_Ativo] DEFAULT (1),
     [CriadoEmUtc]        DATETIME2(3) NOT NULL

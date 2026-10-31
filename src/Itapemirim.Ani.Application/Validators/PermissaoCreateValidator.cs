@@ -20,7 +20,11 @@ public class PermissaoCreateValidator : AbstractValidator<PermissaoCreateRequest
             .MaximumLength(100).WithMessage("O recurso deve ter no mÃ¡ximo 100 caracteres.");
 
         RuleFor(x => x.Acao)
-            .NotEmpty().WithMessage("A aÃ§Ã£o Ã© obrigatÃ³ria.")
-            .MaximumLength(50).WithMessage("A aÃ§Ã£o deve ter no mÃ¡ximo 50 caracteres.");
+            .NotEmpty().WithMessage("A ação é obrigatória.")
+            .MaximumLength(50).WithMessage("A ação deve ter no máximo 50 caracteres.");
+
+        RuleFor(x => x.DscUrl)
+            .MaximumLength(250).WithMessage("A rota/caminho da tela (DscUrl) deve ter no máximo 250 caracteres.")
+            .When(x => !string.IsNullOrWhiteSpace(x.DscUrl));
     }
 }

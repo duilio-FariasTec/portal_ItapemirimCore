@@ -43,6 +43,18 @@ if (app.Environment.IsDevelopment())
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AniDbContext>();
     db.Database.EnsureCreated();
+
+    if (db.Database.IsSqlite())
+    {
+        try
+        {
+            db.Database.ExecuteSqlRaw("ALTER TABLE Permissao ADD COLUMN DscUrl TEXT NULL;");
+        }
+        catch
+        {
+            // Coluna já existe ou tabela criada recentemente com o schema atualizado
+        }
+    }
 }
 
 app.UseHttpsRedirection();

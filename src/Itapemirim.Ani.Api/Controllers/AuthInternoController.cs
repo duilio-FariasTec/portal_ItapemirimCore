@@ -17,4 +17,12 @@ public class AuthInternoController : BaseApiController
         var result = await _service.ValidarAsync(request, ct);
         return Ok(result);
     }
+
+    [HttpPost("login")]
+    [HttpPost("/api/auth/login")]
+    public async Task<IActionResult> Login([FromBody] ValidarCredenciaisRequest request, CancellationToken ct)
+    {
+        var result = await _service.LoginAsync(request, ct);
+        return Ok(result);
+    }
 }

@@ -22,6 +22,7 @@ public class PermissaoConfiguration : IEntityTypeConfiguration<Permissao>
         builder.Property(p => p.Descricao).HasMaxLength(500).IsRequired(false);
         builder.Property(p => p.Recurso).HasMaxLength(100).IsRequired();
         builder.Property(p => p.Acao).HasMaxLength(50).IsRequired();
+        builder.Property(p => p.DscUrl).HasMaxLength(250).IsRequired(false);
         builder.Property(p => p.Ativo).HasDefaultValue(true).IsRequired();
 
         builder.Property(p => p.CriadoEmUtc)

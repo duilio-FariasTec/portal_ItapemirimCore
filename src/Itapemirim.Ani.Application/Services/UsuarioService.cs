@@ -174,7 +174,7 @@ public class UsuarioService : IUsuarioService
             .Where(pp => pp.EstaAtivo && pp.Permissao.Ativo)
             .Select(pp => pp.Permissao)
             .DistinctBy(p => p.PermissaoId)
-            .Select(p => new PermissaoEfetivaResponse(p.PermissaoGuid, p.Codigo, p.Nome, p.Recurso, p.Acao))
+            .Select(p => new PermissaoEfetivaResponse(p.PermissaoGuid, p.Codigo, p.Nome, p.Recurso, p.Acao, p.DscUrl))
             .ToList();
 
         return permissoes;

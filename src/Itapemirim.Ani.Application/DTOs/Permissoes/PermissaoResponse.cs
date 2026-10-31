@@ -7,6 +7,7 @@ public record PermissaoResponse(
     string? Descricao,
     string Recurso,
     string Acao,
+    string? DscUrl,
     bool Ativo,
     DateTime CriadoEmUtc,
     DateTime? AtualizadoEmUtc

@@ -82,6 +82,7 @@ Abaixo está o mapeamento campo a campo de cada uma das 6 tabelas do schema `ani
 | `Descricao` | `NVARCHAR(500)` | Sim | NULL | `Descricao` | `string?` | Opcional, máx 500 caracteres |
 | `Recurso` | `NVARCHAR(100)` | Não | - | `Recurso` | `string` | Módulo/entidade alvo (ex: `Usuarios`, `Perfis`, `Auditoria`) |
 | `Acao` | `NVARCHAR(50)` | Não | - | `Acao` | `string` | Ação permitida (ex: `Consultar`, `Cadastrar`, `Atualizar`, `Inativar`) |
+| `DscUrl` | `NVARCHAR(250)` | Sim | NULL | `DscUrl` | `string?` | Rota/caminho da tela chamada no front (ex: `/usuarios`, `/usuarios/novo`) |
 | `Ativo` | `BIT` | Não | `1` | `Ativo` | `bool` | Flag de permissão ativa no catálogo |
 | `CriadoEmUtc` | `DATETIME2(3)` | Não | `SYSUTCDATETIME()` | `CriadoEmUtc` | `DateTime` | Data/hora UTC de criação |
 | `AtualizadoEmUtc` | `DATETIME2(3)` | Sim | NULL | `AtualizadoEmUtc` | `DateTime?` | Data/hora UTC da última alteração |

@@ -9,6 +9,7 @@ public class Permissao
     public string? Descricao { get; private set; }
     public string Recurso { get; private set; } = null!;
     public string Acao { get; private set; } = null!;
+    public string? DscUrl { get; private set; }
     public bool Ativo { get; private set; } = true;
     public DateTime CriadoEmUtc { get; private set; }
     public DateTime? AtualizadoEmUtc { get; private set; }
@@ -17,7 +18,7 @@ public class Permissao
 
     protected Permissao() { }
 
-    public Permissao(string codigo, string nome, string? descricao, string recurso, string acao, bool ativo = true)
+    public Permissao(string codigo, string nome, string? descricao, string recurso, string acao, string? dscUrl = null, bool ativo = true)
     {
         PermissaoGuid = Guid.NewGuid();
         Codigo = codigo;
@@ -25,16 +26,18 @@ public class Permissao
         Descricao = descricao;
         Recurso = recurso;
         Acao = acao;
+        DscUrl = dscUrl;
         Ativo = ativo;
         CriadoEmUtc = DateTime.UtcNow;
     }
 
-    public void Atualizar(string nome, string? descricao, string recurso, string acao, bool ativo)
+    public void Atualizar(string nome, string? descricao, string recurso, string acao, string? dscUrl, bool ativo)
     {
         Nome = nome;
         Descricao = descricao;
         Recurso = recurso;
         Acao = acao;
+        DscUrl = dscUrl;
         Ativo = ativo;
         AtualizadoEmUtc = DateTime.UtcNow;
     }

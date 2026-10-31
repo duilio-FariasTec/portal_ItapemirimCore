@@ -215,6 +215,7 @@ public class Permissao
     public string? Descricao { get; private set; }
     public string Recurso { get; private set; } = null!;
     public string Acao { get; private set; } = null!;
+    public string? DscUrl { get; private set; }
     public bool Ativo { get; private set; } = true;
     public DateTime CriadoEmUtc { get; private set; }
     public DateTime? AtualizadoEmUtc { get; private set; }
@@ -223,7 +224,7 @@ public class Permissao
 
     protected Permissao() { }
 
-    public Permissao(string codigo, string nome, string? descricao, string recurso, string acao, bool ativo = true)
+    public Permissao(string codigo, string nome, string? descricao, string recurso, string acao, string? dscUrl = null, bool ativo = true)
     {
         PermissaoGuid = Guid.NewGuid();
         Codigo = codigo;
@@ -231,16 +232,18 @@ public class Permissao
         Descricao = descricao;
         Recurso = recurso;
         Acao = acao;
+        DscUrl = dscUrl;
         Ativo = ativo;
         CriadoEmUtc = DateTime.UtcNow;
     }
 
-    public void Atualizar(string nome, string? descricao, string recurso, string acao, bool ativo)
+    public void Atualizar(string nome, string? descricao, string recurso, string acao, string? dscUrl, bool ativo)
     {
         Nome = nome;
         Descricao = descricao;
         Recurso = recurso;
         Acao = acao;
+        DscUrl = dscUrl;
         Ativo = ativo;
         AtualizadoEmUtc = DateTime.UtcNow;
     }
@@ -580,7 +583,8 @@ public record PermissaoEfetivaResponse(
     string Codigo,
     string Nome,
     string Recurso,
-    string Acao
+    string Acao,
+    string? DscUrl
 );
 '@
 
@@ -634,6 +638,7 @@ public record PermissaoCreateRequest(
     string? Descricao,
     string Recurso,
     string Acao,
+    string? DscUrl = null,
     bool Ativo = true
 );
 '@
@@ -646,6 +651,7 @@ public record PermissaoUpdateRequest(
     string? Descricao,
     string Recurso,
     string Acao,
+    string? DscUrl,
     bool Ativo
 );
 '@
@@ -660,6 +666,7 @@ public record PermissaoResponse(
     string? Descricao,
     string Recurso,
     string Acao,
+    string? DscUrl,
     bool Ativo,
     DateTime CriadoEmUtc,
     DateTime? AtualizadoEmUtc
@@ -931,6 +938,10 @@ public class PermissaoCreateValidator : AbstractValidator<PermissaoCreateRequest
         RuleFor(x => x.Acao)
             .NotEmpty().WithMessage("A ação é obrigatória.")
             .MaximumLength(50).WithMessage("A ação deve ter no máximo 50 caracteres.");
+
+        RuleFor(x => x.DscUrl)
+            .MaximumLength(250).WithMessage("A rota/caminho da tela (DscUrl) deve ter no máximo 250 caracteres.")
+            .When(x => !string.IsNullOrWhiteSpace(x.DscUrl));
     }
 }
 '@
@@ -1113,7 +1124,7 @@ public class UsuarioService : IUsuarioService
             .Where(pp => pp.EstaAtivo && pp.Permissao.Ativo)
             .Select(pp => pp.Permissao)
             .DistinctBy(p => p.PermissaoId)
-            .Select(p => new PermissaoEfetivaResponse(p.PermissaoGuid, p.Codigo, p.Nome, p.Recurso, p.Acao))
+            .Select(p => new PermissaoEfetivaResponse(p.PermissaoGuid, p.Codigo, p.Nome, p.Recurso, p.Acao, p.DscUrl))
             .ToList();
 
         return permissoes;
@@ -1240,6 +1251,7 @@ public class PerfilService : IPerfilService
                 p.Permissao.Descricao,
                 p.Permissao.Recurso,
                 p.Permissao.Acao,
+                p.Permissao.DscUrl,
                 p.Permissao.Ativo,
                 p.Permissao.CriadoEmUtc,
                 p.Permissao.AtualizadoEmUtc
@@ -1326,7 +1338,7 @@ public class PermissaoService : IPermissaoService
         if (await _permissaoRepo.ExistsCodigoAsync(request.Codigo, null, ct))
             throw new RegraNegocioException($"O código de permissão '{request.Codigo}' já existe.");
 
-        var permissao = new Permissao(request.Codigo, request.Nome, request.Descricao, request.Recurso, request.Acao, request.Ativo);
+        var permissao = new Permissao(request.Codigo, request.Nome, request.Descricao, request.Recurso, request.Acao, request.DscUrl, request.Ativo);
         await _permissaoRepo.AddAsync(permissao, ct);
         await _uow.CommitAsync(ct);
 
@@ -1340,7 +1352,7 @@ public class PermissaoService : IPermissaoService
         var permissao = await _permissaoRepo.GetByGuidAsync(guid, ct)
             ?? throw new EntidadeNaoEncontradaException("Permissão", guid);
 
-        permissao.Atualizar(request.Nome, request.Descricao, request.Recurso, request.Acao, request.Ativo);
+        permissao.Atualizar(request.Nome, request.Descricao, request.Recurso, request.Acao, request.DscUrl, request.Ativo);
         _permissaoRepo.Update(permissao);
         await _uow.CommitAsync(ct);
 
@@ -1362,7 +1374,7 @@ public class PermissaoService : IPermissaoService
     }
 
     private static PermissaoResponse MapearParaResponse(Permissao p) =>
-        new(p.PermissaoGuid, p.Codigo, p.Nome, p.Descricao, p.Recurso, p.Acao, p.Ativo, p.CriadoEmUtc, p.AtualizadoEmUtc);
+        new(p.PermissaoGuid, p.Codigo, p.Nome, p.Descricao, p.Recurso, p.Acao, p.DscUrl, p.Ativo, p.CriadoEmUtc, p.AtualizadoEmUtc);
 }
 '@
 
@@ -1712,6 +1724,7 @@ public class PermissaoConfiguration : IEntityTypeConfiguration<Permissao>
         builder.Property(p => p.Descricao).HasMaxLength(500).IsRequired(false);
         builder.Property(p => p.Recurso).HasMaxLength(100).IsRequired();
         builder.Property(p => p.Acao).HasMaxLength(50).IsRequired();
+        builder.Property(p => p.DscUrl).HasMaxLength(250).IsRequired(false);
         builder.Property(p => p.Ativo).HasDefaultValue(true).IsRequired();
 
         builder.Property(p => p.CriadoEmUtc)
@@ -2753,6 +2766,8 @@ using Itapemirim.Ani.Api.Services;
 using Itapemirim.Ani.Application;
 using Itapemirim.Ani.Application.Interfaces;
 using Itapemirim.Ani.Infrastructure;
+using Itapemirim.Ani.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -2787,6 +2802,23 @@ if (app.Environment.IsDevelopment())
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "ANI Core v1");
         c.RoutePrefix = string.Empty;
     });
+
+    // Garante que o banco SQLite seja criado automaticamente no primeiro run
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AniDbContext>();
+    db.Database.EnsureCreated();
+
+    if (db.Database.IsSqlite())
+    {
+        try
+        {
+            db.Database.ExecuteSqlRaw("ALTER TABLE Permissao ADD COLUMN DscUrl TEXT NULL;");
+        }
+        catch
+        {
+            // Coluna já existe ou tabela criada recentemente com o schema atualizado
+        }
+    }
 }
 
 app.UseHttpsRedirection();

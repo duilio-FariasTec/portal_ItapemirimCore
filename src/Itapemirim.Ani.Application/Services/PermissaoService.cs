@@ -39,7 +39,7 @@ public class PermissaoService : IPermissaoService
         if (await _permissaoRepo.ExistsCodigoAsync(request.Codigo, null, ct))
             throw new RegraNegocioException($"O cÃ³digo de permissÃ£o '{request.Codigo}' jÃ¡ existe.");
 
-        var permissao = new Permissao(request.Codigo, request.Nome, request.Descricao, request.Recurso, request.Acao, request.Ativo);
+        var permissao = new Permissao(request.Codigo, request.Nome, request.Descricao, request.Recurso, request.Acao, request.DscUrl, request.Ativo);
         await _permissaoRepo.AddAsync(permissao, ct);
         await _uow.CommitAsync(ct);
 
@@ -53,7 +53,7 @@ public class PermissaoService : IPermissaoService
         var permissao = await _permissaoRepo.GetByGuidAsync(guid, ct)
             ?? throw new EntidadeNaoEncontradaException("PermissÃ£o", guid);
 
-        permissao.Atualizar(request.Nome, request.Descricao, request.Recurso, request.Acao, request.Ativo);
+        permissao.Atualizar(request.Nome, request.Descricao, request.Recurso, request.Acao, request.DscUrl, request.Ativo);
         _permissaoRepo.Update(permissao);
         await _uow.CommitAsync(ct);
 
@@ -75,5 +75,5 @@ public class PermissaoService : IPermissaoService
     }
 
     private static PermissaoResponse MapearParaResponse(Permissao p) =>
-        new(p.PermissaoGuid, p.Codigo, p.Nome, p.Descricao, p.Recurso, p.Acao, p.Ativo, p.CriadoEmUtc, p.AtualizadoEmUtc);
+        new(p.PermissaoGuid, p.Codigo, p.Nome, p.Descricao, p.Recurso, p.Acao, p.DscUrl, p.Ativo, p.CriadoEmUtc, p.AtualizadoEmUtc);
 }

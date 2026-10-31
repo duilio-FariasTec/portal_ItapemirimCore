@@ -101,6 +101,7 @@ public class PerfilService : IPerfilService
                 p.Permissao.Descricao,
                 p.Permissao.Recurso,
                 p.Permissao.Acao,
+                p.Permissao.DscUrl,
                 p.Permissao.Ativo,
                 p.Permissao.CriadoEmUtc,
                 p.Permissao.AtualizadoEmUtc

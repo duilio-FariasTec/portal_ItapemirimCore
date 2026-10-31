@@ -5,5 +5,6 @@ public record PermissaoUpdateRequest(
     string? Descricao,
     string Recurso,
     string Acao,
+    string? DscUrl,
     bool Ativo
 );

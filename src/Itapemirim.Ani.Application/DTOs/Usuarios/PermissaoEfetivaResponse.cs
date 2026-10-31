@@ -5,5 +5,6 @@ public record PermissaoEfetivaResponse(
     string Codigo,
     string Nome,
     string Recurso,
-    string Acao
+    string Acao,
+    string? DscUrl
 );

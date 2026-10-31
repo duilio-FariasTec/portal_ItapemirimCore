@@ -6,5 +6,6 @@ public record PermissaoCreateRequest(
     string? Descricao,
     string Recurso,
     string Acao,
+    string? DscUrl = null,
     bool Ativo = true
 );
