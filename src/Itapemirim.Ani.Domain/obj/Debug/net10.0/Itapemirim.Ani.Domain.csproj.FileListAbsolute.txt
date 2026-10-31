@@ -1,0 +1,11 @@
+C:\Users\Duilio Farias\source\repos\portal_ItapemirimCore\src\Itapemirim.Ani.Domain\bin\Debug\net10.0\Itapemirim.Ani.Domain.deps.json
+C:\Users\Duilio Farias\source\repos\portal_ItapemirimCore\src\Itapemirim.Ani.Domain\bin\Debug\net10.0\Itapemirim.Ani.Domain.dll
+C:\Users\Duilio Farias\source\repos\portal_ItapemirimCore\src\Itapemirim.Ani.Domain\bin\Debug\net10.0\Itapemirim.Ani.Domain.pdb
+C:\Users\Duilio Farias\source\repos\portal_ItapemirimCore\src\Itapemirim.Ani.Domain\obj\Debug\net10.0\Itapemirim.Ani.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Duilio Farias\source\repos\portal_ItapemirimCore\src\Itapemirim.Ani.Domain\obj\Debug\net10.0\Itapemirim.Ani.Domain.AssemblyInfoInputs.cache
+C:\Users\Duilio Farias\source\repos\portal_ItapemirimCore\src\Itapemirim.Ani.Domain\obj\Debug\net10.0\Itapemirim.Ani.Domain.AssemblyInfo.cs
+C:\Users\Duilio Farias\source\repos\portal_ItapemirimCore\src\Itapemirim.Ani.Domain\obj\Debug\net10.0\Itapemirim.Ani.Domain.csproj.CoreCompileInputs.cache
+C:\Users\Duilio Farias\source\repos\portal_ItapemirimCore\src\Itapemirim.Ani.Domain\obj\Debug\net10.0\Itapemirim.Ani.Domain.dll
+C:\Users\Duilio Farias\source\repos\portal_ItapemirimCore\src\Itapemirim.Ani.Domain\obj\Debug\net10.0\refint\Itapemirim.Ani.Domain.dll
+C:\Users\Duilio Farias\source\repos\portal_ItapemirimCore\src\Itapemirim.Ani.Domain\obj\Debug\net10.0\Itapemirim.Ani.Domain.pdb
+C:\Users\Duilio Farias\source\repos\portal_ItapemirimCore\src\Itapemirim.Ani.Domain\obj\Debug\net10.0\ref\Itapemirim.Ani.Domain.dll

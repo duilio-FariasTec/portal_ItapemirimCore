@@ -1,0 +1,15 @@
+C:\Users\Duilio Farias\source\repos\portal_ItapemirimCore\src\Itapemirim.Ani.Application\obj\Debug\net10.0\Itapemirim.Ani.Application.csproj.AssemblyReference.cache
+C:\Users\Duilio Farias\source\repos\portal_ItapemirimCore\src\Itapemirim.Ani.Application\obj\Debug\net10.0\Itapemirim.Ani.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Duilio Farias\source\repos\portal_ItapemirimCore\src\Itapemirim.Ani.Application\obj\Debug\net10.0\Itapemirim.Ani.Application.AssemblyInfoInputs.cache
+C:\Users\Duilio Farias\source\repos\portal_ItapemirimCore\src\Itapemirim.Ani.Application\obj\Debug\net10.0\Itapemirim.Ani.Application.AssemblyInfo.cs
+C:\Users\Duilio Farias\source\repos\portal_ItapemirimCore\src\Itapemirim.Ani.Application\obj\Debug\net10.0\Itapemirim.Ani.Application.csproj.CoreCompileInputs.cache
+C:\Users\Duilio Farias\source\repos\portal_ItapemirimCore\src\Itapemirim.Ani.Application\bin\Debug\net10.0\Itapemirim.Ani.Application.deps.json
+C:\Users\Duilio Farias\source\repos\portal_ItapemirimCore\src\Itapemirim.Ani.Application\bin\Debug\net10.0\Itapemirim.Ani.Application.dll
+C:\Users\Duilio Farias\source\repos\portal_ItapemirimCore\src\Itapemirim.Ani.Application\bin\Debug\net10.0\Itapemirim.Ani.Application.pdb
+C:\Users\Duilio Farias\source\repos\portal_ItapemirimCore\src\Itapemirim.Ani.Application\bin\Debug\net10.0\Itapemirim.Ani.Domain.dll
+C:\Users\Duilio Farias\source\repos\portal_ItapemirimCore\src\Itapemirim.Ani.Application\bin\Debug\net10.0\Itapemirim.Ani.Domain.pdb
+C:\Users\Duilio Farias\source\repos\portal_ItapemirimCore\src\Itapemirim.Ani.Application\obj\Debug\net10.0\Itapemir.8AB38BA5.Up2Date
+C:\Users\Duilio Farias\source\repos\portal_ItapemirimCore\src\Itapemirim.Ani.Application\obj\Debug\net10.0\Itapemirim.Ani.Application.dll
+C:\Users\Duilio Farias\source\repos\portal_ItapemirimCore\src\Itapemirim.Ani.Application\obj\Debug\net10.0\refint\Itapemirim.Ani.Application.dll
+C:\Users\Duilio Farias\source\repos\portal_ItapemirimCore\src\Itapemirim.Ani.Application\obj\Debug\net10.0\Itapemirim.Ani.Application.pdb
+C:\Users\Duilio Farias\source\repos\portal_ItapemirimCore\src\Itapemirim.Ani.Application\obj\Debug\net10.0\ref\Itapemirim.Ani.Application.dll
