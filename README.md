@@ -1,0 +1,167 @@
+# Portal Itapemirim — ANI Core API
+
+API REST em **.NET 10** construída segundo os princípios de **Clean Architecture**, responsável pelo núcleo de governança, autenticação, catálogo de permissões por tela/rota (`DscUrl`), perfis e auditoria do ecossistema **Portal Itapemirim**.
+
+---
+
+## 📋 Pré-requisitos
+
+Antes de iniciar, certifique-se de ter instalado no seu ambiente de desenvolvimento:
+
+1. **.NET 10 SDK** (ou versão mais recente):
+   * [Download Oficial .NET SDK (Microsoft)](https://dotnet.microsoft.com/download)
+   * Para validar a instalação, execute no terminal:
+     ```bash
+     dotnet --version
+     # Deve exibir 10.0.x
+     ```
+
+2. **Git**:
+   * [Download Oficial do Git](https://git-scm.com/downloads)
+   * Para validar:
+     ```bash
+     git --version
+     ```
+
+3. **Editor / IDE Recomendada**:
+   * [Visual Studio 2022 / 2026](https://visualstudio.microsoft.com/) (com a carga de trabalho *ASP.NET e desenvolvimento Web*)
+   * [Visual Studio Code](https://code.visualstudio.com/) (com a extensão *C# Dev Kit*)
+   * [JetBrains Rider](https://www.jetbrains.com/rider/)
+
+> [!TIP]
+> **Banco de Dados Local Zero-Config**:
+> Por padrão, a aplicação vem configurada para rodar localmente com **SQLite**, criando e atualizando as tabelas automaticamente na inicialização (`EnsureCreated`). Não é necessário instalar ou configurar o SQL Server para desenvolver e testar localmente!
+
+---
+
+## 🚀 Como Rodar o Projeto do Zero (Passo a Passo)
+
+### 1. Clonar o Repositório do GitHub
+
+Abra o terminal (PowerShell, Command Prompt ou Bash) no diretório onde deseja salvar o projeto e execute:
+
+```bash
+git clone https://github.com/duilio-FariasTec/portal_ItapemirimCore.git
+cd portal_ItapemirimCore
+```
+
+---
+
+### 2. Restaurar Dependências e Compilar a Solução
+
+Na raiz do projeto (`portal_ItapemirimCore`), execute:
+
+```bash
+dotnet build Itapemirim.Ani.sln
+```
+
+*(Esse comando restaura automaticamente todos os pacotes NuGet e compila todos os 5 projetos da solução garantindo 0 Erros).*
+
+---
+
+### 3. Rodar os Testes Automatizados (Opcional)
+
+Para validar a integridade dos domínios e regras de negócio:
+
+```bash
+dotnet test Itapemirim.Ani.sln
+```
+
+---
+
+### 4. Executar a API
+
+Navegue até a pasta da API e execute:
+
+```powershell
+cd .\src\Itapemirim.Ani.Api
+dotnet run
+```
+
+*(Ou diretamente a partir da raiz da solução sem precisar mudar de pasta)*:
+```bash
+dotnet run --project .\src\Itapemirim.Ani.Api\Itapemirim.Ani.Api.csproj
+```
+
+---
+
+### 5. Acessar a Documentação Interativa (Swagger)
+
+Com a API em execução, abra seu navegador no endereço:
+
+* **Swagger UI**: [http://localhost:5146](http://localhost:5146) (ou [https://localhost:7146](https://localhost:7146))
+* **Swagger JSON**: `http://localhost:5146/swagger/v1/swagger.json`
+
+---
+
+## ⚡ Carga Inicial de Dados (Seed Automático via API)
+
+Com a API rodando, você pode popular todo o banco de dados inicial (permissões, perfis, usuários e vínculos) executando os scripts de automação inclusos no repositório em outro terminal:
+
+### No Windows (PowerShell):
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\seed_database_api.ps1
+```
+
+### No Linux / Mac / Git Bash:
+```bash
+chmod +x ./scripts/seed_database_api.sh
+./scripts/seed_database_api.sh
+```
+
+### 🔑 Credenciais Criadas no Seed:
+
+| Usuário | Login | Senha | Perfil | Permissões Associadas |
+| :--- | :--- | :--- | :--- | :--- |
+| **Administrador** | `admin` | `12345678` | Administrador | `home.view`, `precos.view`, `usuarios.manage` |
+| **Analista Financeiro** | `financeiro` | `12345678` | Financeiro | `home.view`, `precos.view` |
+| **Admin Secundário** | `admin2` | `abcdefgh` | Administrador | `home.view`, `precos.view`, `usuarios.manage` |
+| **Financeiro Secundário** | `financeiro2` | `abcdefgh` | Financeiro | `home.view`, `precos.view` |
+
+O script também testa a rota `POST /api/auth/login`, gerando o **Token JWT** e validando suas claims (`sub`, `login`, `role` e `permission`).
+
+---
+
+## 🏗️ Estrutura da Solução (Clean Architecture)
+
+```text
+portal_ItapemirimCore/
+├── .doc/                               # Especificações de arquitetura e endpoints
+├── .sql/                               # Script oficial SQL Server (ani-schema.sql)
+├── scripts/                            # Scripts de automação, seed e testes
+│   ├── seed_database_api.ps1           # Automação de seed em PowerShell
+│   └── seed_database_api.sh            # Automação de seed em Bash
+├── src/
+│   ├── Itapemirim.Ani.Domain/          # Entidades (Usuario, Perfil, Permissao), Enums e Contratos
+│   ├── Itapemirim.Ani.Application/     # Services, DTOs, FluentValidation e Auth/JWT
+│   ├── Itapemirim.Ani.Infrastructure/  # EF Core DbContext, Repositórios e Persistência
+│   └── Itapemirim.Ani.Api/             # Web API REST, Controllers, Middlewares e Swagger
+└── tests/
+    └── Itapemirim.Ani.UnitTests/       # Testes unitários com xUnit
+```
+
+---
+
+## 🗄️ Alternando entre SQLite e SQL Server
+
+A infraestrutura possui suporte a provedores múltiplos configurável pelo arquivo `src/Itapemirim.Ani.Api/appsettings.json`:
+
+```json
+{
+  "DatabaseProvider": "Sqlite",
+  "ConnectionStrings": {
+    "DefaultConnection": "Data Source=ani.db"
+  }
+}
+```
+
+* **Para SQLite (Local)**: Deixe `"DatabaseProvider": "Sqlite"`. O arquivo `ani.db` será criado e gerenciado automaticamente.
+* **Para SQL Server**: Altere para `"DatabaseProvider": "SqlServer"` e aponte a string de conexão para a sua instância SQL Server onde o script [.sql/ani-schema.sql](file:///c:/Users/Duilio%20Farias/source/repos/portal_ItapemirimCore/.sql/ani-schema.sql) foi executado.
+
+---
+
+## 🔒 Segurança e Anti-Fraude (IDOR Protection)
+
+* **GUIDs Públicos**: Todas as rotas de API expõem exclusivamente identificadores em formato **GUID / UUID** (`UsuarioGuid`, `PerfilGuid`, `PermissaoGuid`), impedindo ataques de enumeração sequencial ou força bruta.
+* **Hash de Senhas**: Senhas são criptografadas com **BCrypt** com salt individual.
+* **Auditoria de Operações**: Todas as ações críticas (inclusão, alteração, remoção e tentativas de login) são auditadas em banco de dados.
