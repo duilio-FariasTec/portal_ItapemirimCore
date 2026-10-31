@@ -1,0 +1,35 @@
+services:
+  ani-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: itapemirim-ani-api
+    ports:
+      - "5146:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+      - DatabaseProvider=Sqlite
+      - ConnectionStrings__DefaultConnection=Data Source=/app/data/ani.db
+      - Jwt__SecretKey=Itapemirim_PortalCore_SuperSecret_JwtKey_2026_Minimum32Bytes!
+      - Jwt__Issuer=PortalItapemirimCore
+      - Jwt__Audience=PortalItapemirimApp
+    volumes:
+      - ani-sqlite-data:/app/data
+    restart: unless-stopped
+
+# Caso deseje subir com SQL Server conteinerizado no futuro, descomente o bloco abaixo:
+#  sqlserver:
+#    image: mcr.microsoft.com/mssql/server:2022-latest
+#    container_name: itapemirim-sqlserver
+#    environment:
+#      - ACCEPT_EULA=Y
+#      - MSSQL_SA_PASSWORD=YourStrong@Password2026!
+#    ports:
+#      - "1433:1433"
+#    volumes:
+#      - sqlserver-data:/var/opt/mssql
+
+volumes:
+  ani-sqlite-data:
+#  sqlserver-data:

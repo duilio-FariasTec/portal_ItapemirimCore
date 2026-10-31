@@ -14,6 +14,7 @@ builder.Services.AddScoped<IUserContext, HttpUserContext>();
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
+builder.Services.AddHealthChecks();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -30,6 +31,9 @@ var app = builder.Build();
 
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+// Endpoint de Health Check (essencial para AWS App Runner, ECS, ALB e Docker)
+app.MapHealthChecks("/health");
 
 if (app.Environment.IsDevelopment())
 {
@@ -58,7 +62,12 @@ if (app.Environment.IsDevelopment())
     }
 }
 
-app.UseHttpsRedirection();
+// Redireciona HTTPS apenas fora de containers (containers rodam HTTP interno na porta 8080 com terminação TLS no Load Balancer/CloudFront)
+if (!app.Environment.IsProduction() && Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") != "true")
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseAuthorization();
 app.MapControllers();
 

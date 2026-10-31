@@ -153,8 +153,13 @@ O script também testa a rota `POST /api/auth/login`, gerando o **Token JWT** e 
 
 ```text
 portal_ItapemirimCore/
-├── .doc/                               # Especificações de arquitetura e endpoints
+├── .doc/                               # Especificações de arquitetura, endpoints e guia de deploy AWS
+│   ├── guia_deploy_aws_docker.md       # Guia passo a passo de deploy no Amazon ECR e AWS App Runner
+│   └── guia_execucao_local_sqlite.md   # Guia detalhado de desenvolvimento local com SQLite
 ├── .sql/                               # Script oficial SQL Server (ani-schema.sql)
+├── Dockerfile                          # Build multi-stage para .NET 10 (produção/nuvem)
+├── .dockerignore                       # Exclusão de binários e arquivos locais do build Docker
+├── docker-compose.yml                  # Orquestração local conteinerizada com volume SQLite
 ├── scripts/                            # Scripts de automação, seed e testes
 │   ├── seed_database_api.ps1           # Automação de seed em PowerShell
 │   └── seed_database_api.sh            # Automação de seed em Bash
@@ -162,16 +167,69 @@ portal_ItapemirimCore/
 │   ├── Itapemirim.Ani.Domain/          # Entidades (Usuario, Perfil, Permissao), Enums e Contratos
 │   ├── Itapemirim.Ani.Application/     # Services, DTOs, FluentValidation e Auth/JWT
 │   ├── Itapemirim.Ani.Infrastructure/  # EF Core DbContext, Repositórios e Persistência
-│   └── Itapemirim.Ani.Api/             # Web API REST, Controllers, Middlewares e Swagger
+│   └── Itapemirim.Ani.Api/             # Web API REST, Controllers, Middlewares, Health Check e Swagger
 └── tests/
     └── Itapemirim.Ani.UnitTests/       # Testes unitários com xUnit
 ```
 
 ---
 
+## 🐳 Executando com Docker e Docker Compose
+
+A API inclui configuração completa de conteinerização production-ready em **.NET 10**, executando sob usuário sem privilégios de root (`$APP_UID`), com health check embutido (`/health`) e persistência configurada.
+
+### Subir a API com Docker Compose:
+Na raiz do repositório, execute:
+
+```bash
+docker compose up -d --build
+```
+
+O contêiner subirá a API na porta `5146` mapeada para a porta interna `8080`:
+* **Swagger UI**: [http://localhost:5146](http://localhost:5146)
+* **Health Check**: [http://localhost:5146/health](http://localhost:5146/health) *(retorna `Healthy` com código HTTP 200)*
+* **Banco SQLite**: Os dados ficam salvos de forma persistente no volume Docker `ani-sqlite-data`.
+
+Para visualizar os logs em tempo real:
+```bash
+docker compose logs -f
+```
+
+Para parar o contêiner:
+```bash
+docker compose down
+```
+
+### Build e Execução Manual via Docker CLI:
+```bash
+# 1. Compilar a imagem
+docker build -t itapemirim-ani-api:latest .
+
+# 2. Executar o contêiner
+docker run -d --name itapemirim-api -p 5146:8080 itapemirim-ani-api:latest
+
+# 3. Testar o health check
+curl http://localhost:5146/health
+```
+
+---
+
+## ☁️ Deploy na Nuvem (AWS App Runner / Amazon ECS)
+
+Para subir a aplicação na nuvem da **AWS**, consulte o guia passo a passo em:
+📖 [Guia Completo de Deploy na AWS (.doc/guia_deploy_aws_docker.md)](file:///c:/Users/Duilio%20Farias/source/repos/portal_ItapemirimCore/.doc/guia_deploy_aws_docker.md)
+
+Ele cobre:
+1. Criação do repositório no **Amazon ECR** (Elastic Container Registry).
+2. Autenticação e envio da imagem com `docker push`.
+3. Criação do serviço no **AWS App Runner** com auto-scaling, SSL gratuito e health checks automáticos.
+4. Conexão com banco de dados em nuvem (**Amazon RDS para SQL Server**).
+
+---
+
 ## 🗄️ Alternando entre SQLite e SQL Server
 
-A infraestrutura possui suporte a provedores múltiplos configurável pelo arquivo `src/Itapemirim.Ani.Api/appsettings.json`:
+A infraestrutura possui suporte a provedores múltiplos configurável pelo arquivo `src/Itapemirim.Ani.Api/appsettings.json` ou por variáveis de ambiente do contêiner (`DatabaseProvider` e `ConnectionStrings__DefaultConnection`):
 
 ```json
 {
@@ -182,8 +240,8 @@ A infraestrutura possui suporte a provedores múltiplos configurável pelo arqui
 }
 ```
 
-* **Para SQLite (Local)**: Deixe `"DatabaseProvider": "Sqlite"`. O arquivo `ani.db` será criado e gerenciado automaticamente.
-* **Para SQL Server**: Altere para `"DatabaseProvider": "SqlServer"` e aponte a string de conexão para a sua instância SQL Server onde o script [.sql/ani-schema.sql](file:///c:/Users/Duilio%20Farias/source/repos/portal_ItapemirimCore/.sql/ani-schema.sql) foi executado.
+* **Para SQLite (Local ou Contêiner)**: Deixe `"DatabaseProvider": "Sqlite"`. O arquivo `ani.db` será criado e gerenciado automaticamente.
+* **Para SQL Server (Produção/RDS)**: Altere para `"DatabaseProvider": "SqlServer"` e aponte a string de conexão para a sua instância SQL Server onde o script [.sql/ani-schema.sql](file:///c:/Users/Duilio%20Farias/source/repos/portal_ItapemirimCore/.sql/ani-schema.sql) foi executado.
 
 ---
 
