@@ -1,47 +1,28 @@
-<#
-.SYNOPSIS
-    Script de Seed/Bootstrap e Validação via API REST do ANI Core (Portal Itapemirim)
-.DESCRIPTION
-    Executa em cascata todas as etapas de carga inicial respeitando integridade referencial:
-    1. Criação das Permissões (home.view, precos.view, usuarios.manage)
-    2. Criação dos Perfis (Administrador, Financeiro)
-    3. Associação das Permissões aos Perfis
-    4. Criação dos Usuários Iniciais e Secundários (admin, financeiro, admin2, financeiro2)
-    5. Associação dos Perfis aos Usuários
-    6. Teste de Autenticação com Login (/api/auth/login), validação do Token JWT e decodificação das claims.
-#>
-
-[CmdletBinding()]
 param(
     [string]$BaseUrl = "http://localhost:5146"
 )
 
 $ErrorActionPreference = "Stop"
 
-function Write-Section {
-    param([string]$Title)
+function Write-Section($Title) {
     Write-Host "`n========================================================" -ForegroundColor Cyan
     Write-Host " >> $Title" -ForegroundColor Yellow
     Write-Host "========================================================" -ForegroundColor Cyan
 }
 
-function Write-Success {
-    param([string]$Message)
+function Write-Success($Message) {
     Write-Host "[OK] $Message" -ForegroundColor Green
 }
 
-function Write-Info {
-    param([string]$Message)
+function Write-Info($Message) {
     Write-Host "[INFO] $Message" -ForegroundColor Gray
 }
 
-function Write-Warn {
-    param([string]$Message)
+function Write-Warn($Message) {
     Write-Host "[AVISO] $Message" -ForegroundColor DarkYellow
 }
 
-function Decode-JwtPayload {
-    param([string]$JwtToken)
+function Decode-JwtPayload($JwtToken) {
     $parts = $JwtToken.Split('.')
     if ($parts.Length -lt 2) { return $null }
     $payloadBase64 = $parts[1].Replace('-', '+').Replace('_', '/')
@@ -55,7 +36,7 @@ function Decode-JwtPayload {
 }
 
 # ---------------------------------------------------------
-# Teste de Conectividade
+# 0. Verificando conectividade com a API
 # ---------------------------------------------------------
 Write-Section "0. Verificando conectividade com a API"
 try {
@@ -110,8 +91,7 @@ foreach ($p in $permissoesParaCriar) {
         $mapPermissoes[$p.codigo] = $resp.id
         Write-Success "Permissão '$($p.codigo)' criada com ID: $($resp.id)"
     } catch {
-        # Se já existir, busca o ID existente
-        Write-Warn "Permissão '$($p.codigo)' já existe ou retornou status $($_.Exception.Response.StatusCode). Buscando existente..."
+        Write-Warn "Permissão '$($p.codigo)' já existente. Buscando..."
         $existentes = Invoke-RestMethod -Uri "$BaseUrl/api/v1/permissoes" -Method GET
         $existente = $existentes | Where-Object { $_.codigo -eq $p.codigo }
         if ($existente) {
@@ -150,7 +130,7 @@ foreach ($pf in $perfisParaCriar) {
         $mapPerfis[$pf.nome] = $resp.id
         Write-Success "Perfil '$($pf.nome)' criado com ID: $($resp.id)"
     } catch {
-        Write-Warn "Perfil '$($pf.nome)' já existe ou retornou status $($_.Exception.Response.StatusCode). Buscando existente..."
+        Write-Warn "Perfil '$($pf.nome)' já existente. Buscando..."
         $existentes = Invoke-RestMethod -Uri "$BaseUrl/api/v1/perfis" -Method GET
         $existente = $existentes | Where-Object { $_.nome -eq $pf.nome }
         if ($existente) {
@@ -167,17 +147,15 @@ foreach ($pf in $perfisParaCriar) {
 # ---------------------------------------------------------
 Write-Section "3. Vinculando Permissões aos Perfis (/api/v1/perfis/{id}/permissoes)"
 
-$vinculosPerfilPermissao = @(
-    # Administrador: Todas (home.view, precos.view, usuarios.manage)
+$vinculos = @(
     @{ Perfil = "Administrador"; Permissao = "home.view" },
     @{ Perfil = "Administrador"; Permissao = "precos.view" },
     @{ Perfil = "Administrador"; Permissao = "usuarios.manage" },
-    # Financeiro: home.view, precos.view
     @{ Perfil = "Financeiro"; Permissao = "home.view" },
     @{ Perfil = "Financeiro"; Permissao = "precos.view" }
 )
 
-foreach ($v in $vinculosPerfilPermissao) {
+foreach ($v in $vinculos) {
     $perfilId = $mapPerfis[$v.Perfil]
     $permId = $mapPermissoes[$v.Permissao]
     $body = @{ permissaoId = $permId } | ConvertTo-Json
@@ -241,7 +219,7 @@ foreach ($u in $usuariosParaCriar) {
         $mapUsuarios[$u.login] = $resp.id
         Write-Success "Usuário '$($u.login)' criado com ID: $($resp.id)"
     } catch {
-        Write-Warn "Usuário '$($u.login)' já existe. Buscando ID existente..."
+        Write-Warn "Usuário '$($u.login)' já existe. Buscando..."
         $existentes = Invoke-RestMethod -Uri "$BaseUrl/api/v1/usuarios?Termo=$($u.login)" -Method GET
         $existente = $existentes.itens | Where-Object { $_.login -eq $u.login }
         if ($existente) {
@@ -277,8 +255,18 @@ foreach ($u in $usuariosParaCriar) {
 Write-Section "6. Testando Login e Validação de Claims do Token JWT (/api/auth/login)"
 
 $loginsParaTestar = @(
-    @{ login = "admin"; senha = "12345678"; perfilEsperado = "Administrador"; permsEsperadas = @("home.view", "precos.view", "usuarios.manage") },
-    @{ login = "financeiro"; senha = "12345678"; perfilEsperado = "Financeiro"; permsEsperadas = @("home.view", "precos.view") }
+    @{
+        login          = "admin"
+        senha          = "12345678"
+        perfilEsperado = "Administrador"
+        permsEsperadas = @("home.view", "precos.view", "usuarios.manage")
+    },
+    @{
+        login          = "financeiro"
+        senha          = "12345678"
+        perfilEsperado = "Financeiro"
+        permsEsperadas = @("home.view", "precos.view")
+    }
 )
 
 foreach ($lt in $loginsParaTestar) {
@@ -294,44 +282,37 @@ foreach ($lt in $loginsParaTestar) {
     Write-Info "Token Tipo: $($loginResp.tokenType) (Expira em: $($loginResp.expiresInSeconds)s)"
     Write-Info "Token JWT: $($loginResp.token.Substring(0, 45))..."
 
-    # Decodifica o payload do Token JWT para validar as Claims
     $jwtClaims = Decode-JwtPayload -JwtToken $loginResp.token
 
     Write-Host "`n  [Validação de Claims no Token JWT]:" -ForegroundColor Cyan
     Write-Host "  * Subject (sub / UserGuid) : $($jwtClaims.sub)" -ForegroundColor White
     Write-Host "  * Nome (unique_name)       : $($jwtClaims.unique_name)" -ForegroundColor White
     Write-Host "  * Login                    : $($jwtClaims.login)" -ForegroundColor White
-    
-    # Extrai roles/perfis
+
     $roles = @($jwtClaims.role)
     Write-Host "  * Roles (Perfis no JWT)    : $($roles -join ', ')" -ForegroundColor White
     if ($roles -contains $lt.perfilEsperado) {
-        Write-Success "  ✓ Role '$($lt.perfilEsperado)' validada com sucesso no JWT!"
+        Write-Success "  Role '$($lt.perfilEsperado)' validada com sucesso no JWT!"
     } else {
-        Write-Host "  ✗ Role '$($lt.perfilEsperado)' NÃO encontrada no JWT!" -ForegroundColor Red
+        Write-Host "  Role '$($lt.perfilEsperado)' NAO encontrada no JWT!" -ForegroundColor Red
     }
 
-    # Extrai permissões
     $perms = @($jwtClaims.permission)
     Write-Host "  * Permissions no JWT       : $($perms -join ', ')" -ForegroundColor White
-    
-    $todasOk = $true
+
     foreach ($pEsp in $lt.permsEsperadas) {
         if ($perms -contains $pEsp) {
-            Write-Success "  ✓ Permissão '$pEsp' presente no JWT!"
+            Write-Success "  Permissao '$pEsp' presente no JWT!"
         } else {
-            Write-Host "  ✗ Permissão '$pEsp' AUSENTE no JWT!" -ForegroundColor Red
-            $todasOk = $false
+            Write-Host "  Permissao '$pEsp' AUSENTE no JWT!" -ForegroundColor Red
         }
     }
 
-    # Chamada adicional com Token Bearer para testar Permissões Efetivas
     $userId = $mapUsuarios[$lt.login]
-    $permsEfetivas = Invoke-RestMethod -Uri "$BaseUrl/api/v1/usuarios/$userId/permissoes-efetivas" `
-                                      -Method GET `
-                                      -Headers @{ Authorization = "Bearer $($loginResp.token)" }
+    $authHeaders = @{ Authorization = "Bearer $($loginResp.token)" }
+    $permsEfetivas = Invoke-RestMethod -Uri "$BaseUrl/api/v1/usuarios/$userId/permissoes-efetivas" -Method GET -Headers $authHeaders
 
-    Write-Host "`n  [Permissões Efetivas via API GET /permissoes-efetivas]:" -ForegroundColor DarkCyan
+    Write-Host "`n  [Permissoes Efetivas via API GET /permissoes-efetivas]:" -ForegroundColor DarkCyan
     foreach ($pe in $permsEfetivas) {
         Write-Host "   -> [$($pe.codigo)] $($pe.nome) | Rota: $($pe.dscUrl)" -ForegroundColor Gray
     }

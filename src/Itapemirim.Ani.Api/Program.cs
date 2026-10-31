@@ -4,6 +4,7 @@ using Itapemirim.Ani.Application;
 using Itapemirim.Ani.Application.Interfaces;
 using Itapemirim.Ani.Infrastructure;
 using Itapemirim.Ani.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
