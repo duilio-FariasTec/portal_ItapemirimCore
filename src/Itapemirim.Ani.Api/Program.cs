@@ -50,14 +50,21 @@ if (app.Environment.IsDevelopment())
 
     if (db.Database.IsSqlite())
     {
-        bool sistemaExiste = false;
+        bool schemaAtualizado = false;
         try
         {
             using var cmd = db.Database.GetDbConnection().CreateCommand();
-            cmd.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Sistema';";
+            cmd.CommandText = @"
+                SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Sistema';";
             db.Database.OpenConnection();
-            var count = Convert.ToInt32(cmd.ExecuteScalar());
-            sistemaExiste = count > 0;
+            var tabelaSistema = Convert.ToInt32(cmd.ExecuteScalar()) > 0;
+
+            if (tabelaSistema)
+            {
+                cmd.CommandText = "SELECT COUNT(*) FROM pragma_table_info('Usuario') WHERE name='ExigeTrocaSenhaNoProximoLogin';";
+                var colunaReset = Convert.ToInt32(cmd.ExecuteScalar()) > 0;
+                schemaAtualizado = colunaReset;
+            }
         }
         catch
         {
@@ -69,7 +76,7 @@ if (app.Environment.IsDevelopment())
             Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
         }
 
-        if (!sistemaExiste)
+        if (!schemaAtualizado)
         {
             db.Database.EnsureDeleted();
         }

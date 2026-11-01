@@ -4,6 +4,7 @@ using Itapemirim.Ani.Application.Interfaces;
 using Itapemirim.Ani.Domain.Interfaces;
 using Itapemirim.Ani.Infrastructure.Data;
 using Itapemirim.Ani.Infrastructure.Data.Repositories;
+using Itapemirim.Ani.Infrastructure.Email;
 using Itapemirim.Ani.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -45,6 +46,17 @@ public static class DependencyInjection
         services.AddScoped<IAuditoriaRepository, AuditoriaRepository>();
 
         services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();
+
+        // Provedor de E-mail desacoplado via Feature Flag / Configuração (File ou Smtp)
+        var emailProvider = configuration["Email:Provider"] ?? "File";
+        if (emailProvider.Equals("Smtp", StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddScoped<IEmailService, SmtpEmailService>();
+        }
+        else
+        {
+            services.AddScoped<IEmailService, FileEmailService>();
+        }
 
         return services;
     }

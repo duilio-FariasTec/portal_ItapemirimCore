@@ -211,6 +211,7 @@ public class UsuarioService : IUsuarioService
                     p.Perfil.Sistema?.Codigo ?? p.Sistema?.Codigo ?? string.Empty,
                     p.Perfil.Sistema?.Nome ?? p.Sistema?.Nome ?? string.Empty,
                     p.ConcedidoEmUtc))
-                .ToList()
+                .ToList(),
+            u.ExigeTrocaSenhaNoProximoLogin
         );
 }

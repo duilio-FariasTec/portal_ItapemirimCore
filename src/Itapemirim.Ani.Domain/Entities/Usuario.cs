@@ -11,6 +11,7 @@ public class Usuario
     public string? Email { get; private set; }
     public string SenhaHash { get; private set; } = null!;
     public UsuarioStatus Status { get; private set; } = UsuarioStatus.Ativo;
+    public bool ExigeTrocaSenhaNoProximoLogin { get; private set; }
     public DateTime CriadoEmUtc { get; private set; }
     public DateTime? AtualizadoEmUtc { get; private set; }
 
@@ -31,6 +32,7 @@ public class Usuario
         Email = email;
         SenhaHash = senhaHash;
         Status = status;
+        ExigeTrocaSenhaNoProximoLogin = false;
         CriadoEmUtc = DateTime.UtcNow;
     }
 
@@ -48,9 +50,17 @@ public class Usuario
         AtualizadoEmUtc = DateTime.UtcNow;
     }
 
-    public void AtualizarSenha(string novoHash)
+    public void AtualizarSenha(string novoHash, bool exigeTrocaNoProximoLogin = false)
     {
         SenhaHash = novoHash;
+        ExigeTrocaSenhaNoProximoLogin = exigeTrocaNoProximoLogin;
+        AtualizadoEmUtc = DateTime.UtcNow;
+    }
+
+    public void ConfirmarTrocaSenha(string novoHash)
+    {
+        SenhaHash = novoHash;
+        ExigeTrocaSenhaNoProximoLogin = false;
         AtualizadoEmUtc = DateTime.UtcNow;
     }
 }

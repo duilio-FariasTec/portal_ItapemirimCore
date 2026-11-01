@@ -23,6 +23,8 @@ public class UsuarioPerfilRestricaoTests
         public Task<Usuario?> GetByIdAsync(long id, CancellationToken ct = default) => Task.FromResult(UsuarioRetornado);
         public Task<Usuario?> GetByGuidAsync(Guid guid, CancellationToken ct = default) => Task.FromResult(UsuarioRetornado);
         public Task<Usuario?> GetByLoginAsync(string login, CancellationToken ct = default) => Task.FromResult(UsuarioRetornado);
+        public Task<Usuario?> GetByEmailAsync(string email, CancellationToken ct = default) => Task.FromResult(UsuarioRetornado);
+        public Task<Usuario?> GetByLoginOrEmailAsync(string identificador, CancellationToken ct = default) => Task.FromResult(UsuarioRetornado);
         public Task<bool> ExistsLoginAsync(string login, long? ignorarUsuarioId = null, CancellationToken ct = default) => Task.FromResult(false);
         public Task<bool> ExistsEmailAsync(string email, long? ignorarUsuarioId = null, CancellationToken ct = default) => Task.FromResult(false);
         public Task<(IEnumerable<Usuario> Itens, int Total)> GetPagedAsync(string? busca, UsuarioStatus? status, long? perfilId, int pageNumber, int pageSize, CancellationToken ct = default) =>

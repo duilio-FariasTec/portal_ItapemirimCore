@@ -56,6 +56,40 @@ public class UsuarioRepository : IUsuarioRepository
             .FirstOrDefaultAsync(u => u.Login == login, ct);
     }
 
+    public async Task<Usuario?> GetByEmailAsync(string email, CancellationToken ct = default)
+    {
+        var emailNormalizado = email.Trim().ToLower();
+        return await _db.Usuarios
+            .Include(u => u.PerfisAssociados)
+                .ThenInclude(up => up.Perfil)
+                    .ThenInclude(p => p.Sistema)
+            .Include(u => u.PerfisAssociados)
+                .ThenInclude(up => up.Perfil)
+                    .ThenInclude(p => p.Permissoes)
+                        .ThenInclude(pp => pp.Permissao)
+            .Include(u => u.PerfisAssociados)
+                .ThenInclude(up => up.Sistema)
+            .FirstOrDefaultAsync(u => u.Email != null && u.Email.ToLower() == emailNormalizado, ct);
+    }
+
+    public async Task<Usuario?> GetByLoginOrEmailAsync(string identificador, CancellationToken ct = default)
+    {
+        var termo = identificador.Trim();
+        var termoLower = termo.ToLower();
+
+        return await _db.Usuarios
+            .Include(u => u.PerfisAssociados)
+                .ThenInclude(up => up.Perfil)
+                    .ThenInclude(p => p.Sistema)
+            .Include(u => u.PerfisAssociados)
+                .ThenInclude(up => up.Perfil)
+                    .ThenInclude(p => p.Permissoes)
+                        .ThenInclude(pp => pp.Permissao)
+            .Include(u => u.PerfisAssociados)
+                .ThenInclude(up => up.Sistema)
+            .FirstOrDefaultAsync(u => u.Login.ToLower() == termoLower || (u.Email != null && u.Email.ToLower() == termoLower), ct);
+    }
+
     public async Task<bool> ExistsLoginAsync(string login, long? ignorarUsuarioId = null, CancellationToken ct = default)
     {
         return await _db.Usuarios

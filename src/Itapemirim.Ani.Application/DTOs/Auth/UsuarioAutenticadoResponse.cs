@@ -10,5 +10,6 @@ public record UsuarioAutenticadoResponse(
     List<PerfilUsuarioAutenticadoResponse> Perfis,
     List<PermissaoUsuarioAutenticadoResponse> Permissoes,
     List<string> Roles,
-    List<string> PermissoesCodigos
+    List<string> PermissoesCodigos,
+    bool ExigeTrocaSenhaNoProximoLogin = false
 );

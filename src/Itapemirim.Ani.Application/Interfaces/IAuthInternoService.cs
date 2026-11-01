@@ -6,4 +6,6 @@ public interface IAuthInternoService
 {
     Task<UsuarioAutenticadoResponse> ValidarAsync(ValidarCredenciaisRequest request, CancellationToken ct = default);
     Task<LoginResponse> LoginAsync(ValidarCredenciaisRequest request, CancellationToken ct = default);
+    Task<ResetSenhaResponse> ResetarSenhaAsync(ResetSenhaDto request, CancellationToken ct = default);
+    Task<TrocarSenhaResponse> TrocarSenhaAsync(TrocarSenhaDto request, CancellationToken ct = default);
 }

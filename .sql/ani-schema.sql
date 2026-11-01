@@ -45,6 +45,8 @@ CREATE TABLE [ani].[Usuario]
     [SenhaHash]          NVARCHAR(512) NOT NULL,
     [Status]             NVARCHAR(20) NOT NULL
         CONSTRAINT [DF_Usuario_Status] DEFAULT (N'Ativo'),
+    [ExigeTrocaSenhaNoProximoLogin] BIT NOT NULL
+        CONSTRAINT [DF_Usuario_ExigeTrocaSenha] DEFAULT (0),
     [CriadoEmUtc]        DATETIME2(3) NOT NULL
         CONSTRAINT [DF_Usuario_CriadoEmUtc] DEFAULT (SYSUTCDATETIME()),
     [AtualizadoEmUtc]    DATETIME2(3) NULL,

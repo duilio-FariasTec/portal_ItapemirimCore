@@ -34,6 +34,10 @@ public class UsuarioConfiguration : IEntityTypeConfiguration<Usuario>
             .HasDefaultValue(UsuarioStatus.Ativo)
             .IsRequired();
 
+        builder.Property(u => u.ExigeTrocaSenhaNoProximoLogin)
+            .HasDefaultValue(false)
+            .IsRequired();
+
         builder.Property(u => u.CriadoEmUtc)
             .HasColumnType("datetime2(3)")
             .HasDefaultValueSql("SYSUTCDATETIME()")

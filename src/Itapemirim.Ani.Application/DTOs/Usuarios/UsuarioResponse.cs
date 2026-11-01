@@ -10,5 +10,6 @@ public record UsuarioResponse(
     string Status,
     DateTime CriadoEmUtc,
     DateTime? AtualizadoEmUtc,
-    List<PerfilResumidoResponse> PerfisAtivos
+    List<PerfilResumidoResponse> PerfisAtivos,
+    bool ExigeTrocaSenhaNoProximoLogin = false
 );
