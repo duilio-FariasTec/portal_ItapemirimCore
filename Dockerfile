@@ -44,19 +44,15 @@ RUN dotnet restore "Itapemirim.Ani.sln"
 # Copia todo o código-fonte restante
 COPY . .
 
-# Compila o projeto da API
-WORKDIR "/src/src/Itapemirim.Ani.Api"
-RUN dotnet build "Itapemirim.Ani.Api.csproj" -c $BUILD_CONFIGURATION -o /app/build --no-restore
-
 # ------------------------------------------------------------------------------
-# 3. Publish Stage (Gera os binários finais otimizados de produção)
+# 3. Publish Stage (Compila e publica os binários finais otimizados de produção)
 # ------------------------------------------------------------------------------
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
+WORKDIR "/src/src/Itapemirim.Ani.Api"
 RUN dotnet publish "Itapemirim.Ani.Api.csproj" \
     -c $BUILD_CONFIGURATION \
     -o /app/publish \
-    --no-build \
     /p:UseAppHost=false
 
 # ------------------------------------------------------------------------------
