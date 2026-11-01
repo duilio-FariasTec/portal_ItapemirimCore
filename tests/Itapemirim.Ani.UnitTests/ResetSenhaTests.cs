@@ -88,7 +88,13 @@ public class ResetSenhaTests
 
     private class FakeConfiguration : IConfiguration
     {
-        public string? this[string key] { get => null; set { } }
+        private readonly Dictionary<string, string?> _values;
+        public FakeConfiguration(Dictionary<string, string?>? values = null) => _values = values ?? new();
+        public string? this[string key]
+        {
+            get => _values.TryGetValue(key, out var val) ? val : null;
+            set => _values[key] = value;
+        }
         public IEnumerable<IConfigurationSection> GetChildren() => Array.Empty<IConfigurationSection>();
         public Microsoft.Extensions.Primitives.IChangeToken GetReloadToken() => null!;
         public IConfigurationSection GetSection(string key) => null!;
@@ -103,13 +109,17 @@ public class ResetSenhaTests
         var hasher = new FakePasswordHasher();
         var email = new FakeEmailService();
         var auditoria = new FakeAuditoriaService();
-        var config = new FakeConfiguration();
+        var config = new FakeConfiguration(new Dictionary<string, string?>
+        {
+            ["Email:AlsoWriteToFile"] = "true"
+        });
 
         var service = new AuthService(repo, uow, hasher, auditoria, email, config);
 
         var response = await service.ResetarSenhaAsync(new ResetSenhaDto(Login: "admin.master"));
 
         Assert.NotNull(response);
+        Assert.Equal(hasher.UltimaSenhaHasheada, response.SenhaTemporaria);
         Assert.True(repo.Atualizado);
         Assert.Equal(1, uow.Commits);
         Assert.True(usuario.ExigeTrocaSenhaNoProximoLogin);

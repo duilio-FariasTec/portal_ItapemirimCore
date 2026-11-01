@@ -279,7 +279,12 @@ public class AuthInternoService : IAuthInternoService
             ResultadoAuditoria.SUCESSO,
             ct);
 
-        return new ResetSenhaResponse(MensagemPadraoResetSenha, DateTime.UtcNow);
+        var alsoWriteToFile = bool.TryParse(_configuration["Email:AlsoWriteToFile"], out var writeFile) && writeFile;
+
+        return new ResetSenhaResponse(
+            MensagemPadraoResetSenha,
+            DateTime.UtcNow,
+            SenhaTemporaria: alsoWriteToFile ? novaSenhaTemporaria : null);
     }
 
     public async Task<TrocarSenhaResponse> TrocarSenhaAsync(TrocarSenhaDto request, CancellationToken ct = default)

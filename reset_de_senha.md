@@ -333,13 +333,15 @@ curl -i -X POST "http://localhost:5146/api/auth/reset-senha" \
 ```
 
 #### Resposta HTTP (`200 OK`):
+*(Quando `"Email:AlsoWriteToFile": true` no `appsettings.json`, o DTO também devolve `"senhaTemporaria"` para facilitar testes rápidos; quando `false`, o campo é omitido)*
 ```http
 HTTP/1.1 200 OK
 Content-Type: application/json; charset=utf-8
 
 {
   "mensagem": "Se as informações informadas corresponderem a uma conta ativa, você receberá um e-mail com as instruções e a senha temporária de acesso.",
-  "processadoEmUtc": "2026-11-01T16:45:00.1234567Z"
+  "processadoEmUtc": "2026-11-01T16:45:00.1234567Z",
+  "senhaTemporaria": "K9#mP4!xQ2@v"
 }
 ```
 
