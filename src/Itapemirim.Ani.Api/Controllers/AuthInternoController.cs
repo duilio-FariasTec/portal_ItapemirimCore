@@ -23,7 +23,6 @@ public class AuthInternoController : BaseApiController
     }
 
     [HttpPost("login")]
-    [HttpPost("/api/auth/login")]
     [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> Login([FromBody] ValidarCredenciaisRequest request, CancellationToken ct)
@@ -37,9 +36,6 @@ public class AuthInternoController : BaseApiController
     /// Sempre retorna 200 OK independentemente da existência do usuário (proteção contra enumeração de contas).
     /// </summary>
     [HttpPost("reset-senha")]
-    [HttpPost("forgot-password")]
-    [HttpPost("/api/auth/reset-senha")]
-    [HttpPost("/api/auth/forgot-password")]
     [ProducesResponseType(typeof(ResetSenhaResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ResetSenha(
@@ -70,11 +66,6 @@ public class AuthInternoController : BaseApiController
     /// Limpa automaticamente a flag ExigeTrocaSenhaNoProximoLogin após a confirmação.
     /// </summary>
     [HttpPost("trocar-senha")]
-    [HttpPost("alterar-senha")]
-    [HttpPost("change-password")]
-    [HttpPost("/api/auth/trocar-senha")]
-    [HttpPost("/api/auth/alterar-senha")]
-    [HttpPost("/api/auth/change-password")]
     [ProducesResponseType(typeof(TrocarSenhaResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
