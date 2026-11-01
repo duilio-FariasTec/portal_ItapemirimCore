@@ -56,7 +56,7 @@ public class UsuarioService : IUsuarioService
     public async Task<UsuarioResponse> ObterPorGuidAsync(Guid guid, CancellationToken ct = default)
     {
         var usuario = await _usuarioRepo.GetByGuidAsync(guid, ct)
-            ?? throw new EntidadeNaoEncontradaException("UsuÃ¡rio", guid);
+            ?? throw new EntidadeNaoEncontradaException("Usuário", guid);
 
         return MapearParaResponse(usuario);
     }
@@ -64,10 +64,10 @@ public class UsuarioService : IUsuarioService
     public async Task<UsuarioResponse> CadastrarAsync(UsuarioCreateRequest request, CancellationToken ct = default)
     {
         if (await _usuarioRepo.ExistsLoginAsync(request.Login, null, ct))
-            throw new RegraNegocioException($"O login '{request.Login}' jÃ¡ estÃ¡ em uso.");
+            throw new ConflitoException($"O login '{request.Login}' já está em uso.");
 
         if (!string.IsNullOrWhiteSpace(request.Email) && await _usuarioRepo.ExistsEmailAsync(request.Email, null, ct))
-            throw new RegraNegocioException($"O e-mail '{request.Email}' jÃ¡ estÃ¡ em uso.");
+            throw new ConflitoException($"O e-mail '{request.Email}' já está em uso.");
 
         var status = UsuarioStatus.Ativo;
         if (!string.IsNullOrWhiteSpace(request.Status) && Enum.TryParse<UsuarioStatus>(request.Status, true, out var parsed))
@@ -87,13 +87,13 @@ public class UsuarioService : IUsuarioService
     public async Task<UsuarioResponse> AtualizarAsync(Guid guid, UsuarioUpdateRequest request, CancellationToken ct = default)
     {
         var usuario = await _usuarioRepo.GetByGuidAsync(guid, ct)
-            ?? throw new EntidadeNaoEncontradaException("UsuÃ¡rio", guid);
+            ?? throw new EntidadeNaoEncontradaException("Usuário", guid);
 
         if (!string.IsNullOrWhiteSpace(request.Email) && await _usuarioRepo.ExistsEmailAsync(request.Email, usuario.UsuarioId, ct))
-            throw new RegraNegocioException($"O e-mail '{request.Email}' jÃ¡ estÃ¡ cadastrado para outro usuÃ¡rio.");
+            throw new ConflitoException($"O e-mail '{request.Email}' já está cadastrado para outro usuário.");
 
         if (!Enum.TryParse<UsuarioStatus>(request.Status, true, out var status))
-            throw new RegraNegocioException($"Status '{request.Status}' invÃ¡lido.");
+            throw new RegraNegocioException($"Status '{request.Status}' inválido.");
 
         usuario.AtualizarDados(request.Nome, request.Email, status);
         _usuarioRepo.Update(usuario);
@@ -107,7 +107,7 @@ public class UsuarioService : IUsuarioService
     public async Task InativarAsync(Guid guid, CancellationToken ct = default)
     {
         var usuario = await _usuarioRepo.GetByGuidAsync(guid, ct)
-            ?? throw new EntidadeNaoEncontradaException("UsuÃ¡rio", guid);
+            ?? throw new EntidadeNaoEncontradaException("Usuário", guid);
 
         usuario.Inativar();
         _usuarioRepo.Update(usuario);
@@ -119,27 +119,40 @@ public class UsuarioService : IUsuarioService
     public async Task<IEnumerable<PerfilResumidoResponse>> ObterPerfisAsync(Guid guid, CancellationToken ct = default)
     {
         var usuario = await _usuarioRepo.GetByGuidAsync(guid, ct)
-            ?? throw new EntidadeNaoEncontradaException("UsuÃ¡rio", guid);
+            ?? throw new EntidadeNaoEncontradaException("Usuário", guid);
 
         return usuario.PerfisAssociados
             .Where(p => p.EstaAtivo && p.Perfil.Ativo)
-            .Select(p => new PerfilResumidoResponse(p.Perfil.PerfilGuid, p.Perfil.Nome, p.ConcedidoEmUtc))
+            .Select(p => new PerfilResumidoResponse(
+                p.Perfil.PerfilGuid,
+                p.Perfil.Nome,
+                p.Perfil.Sistema?.SistemaGuid ?? p.Sistema?.SistemaGuid ?? Guid.Empty,
+                p.Perfil.Sistema?.Codigo ?? p.Sistema?.Codigo ?? string.Empty,
+                p.Perfil.Sistema?.Nome ?? p.Sistema?.Nome ?? string.Empty,
+                p.ConcedidoEmUtc))
             .ToList();
     }
 
     public async Task AtribuirPerfilAsync(Guid usuarioGuid, Guid perfilGuid, CancellationToken ct = default)
     {
         var usuario = await _usuarioRepo.GetByGuidAsync(usuarioGuid, ct)
-            ?? throw new EntidadeNaoEncontradaException("UsuÃ¡rio", usuarioGuid);
+            ?? throw new EntidadeNaoEncontradaException("Usuário", usuarioGuid);
 
         var perfil = await _perfilRepo.GetByGuidAsync(perfilGuid, ct)
             ?? throw new EntidadeNaoEncontradaException("Perfil", perfilGuid);
 
-        var jaAtribuido = usuario.PerfisAssociados.Any(p => p.PerfilId == perfil.PerfilId && p.EstaAtivo);
-        if (jaAtribuido)
-            throw new RegraNegocioException("O usuÃ¡rio jÃ¡ possui este perfil ativo.");
+        // Regra mandatória: Usuário NÃO pode possuir mais de um perfil no mesmo sistema
+        var vinculoMesmoSistema = usuario.PerfisAssociados
+            .FirstOrDefault(p => p.EstaAtivo && (p.SistemaId == perfil.SistemaId || (p.Perfil != null && p.Perfil.SistemaId == perfil.SistemaId)));
 
-        var vinculo = new UsuarioPerfil(usuario.UsuarioId, perfil.PerfilId, _userContext.CurrentUserId);
+        if (vinculoMesmoSistema != null)
+        {
+            var sistemaNome = perfil.Sistema?.Nome ?? "solicitado";
+            var perfilAtualNome = vinculoMesmoSistema.Perfil?.Nome ?? "existente";
+            throw new ConflitoException($"O usuário já possui o perfil '{perfilAtualNome}' ativo no sistema '{sistemaNome}'. Não é permitido atribuir mais de um perfil no mesmo sistema.");
+        }
+
+        var vinculo = new UsuarioPerfil(usuario.UsuarioId, perfil.PerfilId, perfil.SistemaId, _userContext.CurrentUserId);
         usuario.PerfisAssociados.Add(vinculo);
 
         await _uow.CommitAsync(ct);
@@ -149,13 +162,13 @@ public class UsuarioService : IUsuarioService
     public async Task RevogarPerfilAsync(Guid usuarioGuid, Guid perfilGuid, CancellationToken ct = default)
     {
         var usuario = await _usuarioRepo.GetByGuidAsync(usuarioGuid, ct)
-            ?? throw new EntidadeNaoEncontradaException("UsuÃ¡rio", usuarioGuid);
+            ?? throw new EntidadeNaoEncontradaException("Usuário", usuarioGuid);
 
         var perfil = await _perfilRepo.GetByGuidAsync(perfilGuid, ct)
             ?? throw new EntidadeNaoEncontradaException("Perfil", perfilGuid);
 
         var vinculo = usuario.PerfisAssociados.FirstOrDefault(p => p.PerfilId == perfil.PerfilId && p.EstaAtivo)
-            ?? throw new RegraNegocioException("O usuÃ¡rio nÃ£o possui este perfil ativo para revogar.");
+            ?? throw new RegraNegocioException("O usuário não possui este perfil ativo para revogar.");
 
         vinculo.Revogar(_userContext.CurrentUserId);
         await _uow.CommitAsync(ct);
@@ -166,7 +179,7 @@ public class UsuarioService : IUsuarioService
     public async Task<IEnumerable<PermissaoEfetivaResponse>> ObterPermissoesEfetivasAsync(Guid usuarioGuid, CancellationToken ct = default)
     {
         var usuario = await _usuarioRepo.GetByGuidAsync(usuarioGuid, ct)
-            ?? throw new EntidadeNaoEncontradaException("UsuÃ¡rio", usuarioGuid);
+            ?? throw new EntidadeNaoEncontradaException("Usuário", usuarioGuid);
 
         var permissoes = usuario.PerfisAssociados
             .Where(up => up.EstaAtivo && up.Perfil.Ativo)
@@ -191,7 +204,13 @@ public class UsuarioService : IUsuarioService
             u.AtualizadoEmUtc,
             u.PerfisAssociados
                 .Where(p => p.EstaAtivo && p.Perfil.Ativo)
-                .Select(p => new PerfilResumidoResponse(p.Perfil.PerfilGuid, p.Perfil.Nome, p.ConcedidoEmUtc))
+                .Select(p => new PerfilResumidoResponse(
+                    p.Perfil.PerfilGuid,
+                    p.Perfil.Nome,
+                    p.Perfil.Sistema?.SistemaGuid ?? p.Sistema?.SistemaGuid ?? Guid.Empty,
+                    p.Perfil.Sistema?.Codigo ?? p.Sistema?.Codigo ?? string.Empty,
+                    p.Perfil.Sistema?.Nome ?? p.Sistema?.Nome ?? string.Empty,
+                    p.ConcedidoEmUtc))
                 .ToList()
         );
 }

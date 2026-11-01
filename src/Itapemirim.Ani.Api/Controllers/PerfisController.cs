@@ -13,9 +13,9 @@ public class PerfisController : BaseApiController
     public PerfisController(IPerfilService service) => _service = service;
 
     [HttpGet]
-    public async Task<IActionResult> Listar([FromQuery] bool apenasAtivos = false, CancellationToken ct = default)
+    public async Task<IActionResult> Listar([FromQuery] bool apenasAtivos = false, [FromQuery] Guid? sistemaGuid = null, CancellationToken ct = default)
     {
-        var result = await _service.ListarAsync(apenasAtivos, ct);
+        var result = await _service.ListarAsync(apenasAtivos, sistemaGuid, ct);
         return Ok(result);
     }
 

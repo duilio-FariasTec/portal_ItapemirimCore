@@ -37,6 +37,7 @@ public class ExceptionHandlingMiddleware
         {
             EntidadeNaoEncontradaException => HttpStatusCode.NotFound,
             ValidationException => HttpStatusCode.BadRequest,
+            ConflitoException => HttpStatusCode.Conflict,
             RegraNegocioException => HttpStatusCode.UnprocessableEntity,
             DomainException => HttpStatusCode.BadRequest,
             _ => HttpStatusCode.InternalServerError
@@ -47,9 +48,10 @@ public class ExceptionHandlingMiddleware
             Status = (int)statusCode,
             Title = statusCode switch
             {
-                HttpStatusCode.NotFound => "Recurso nÃ£o encontrado",
-                HttpStatusCode.BadRequest => "RequisiÃ§Ã£o invÃ¡lida",
-                HttpStatusCode.UnprocessableEntity => "Regra de negÃ³cio violada",
+                HttpStatusCode.NotFound => "Recurso não encontrado",
+                HttpStatusCode.BadRequest => "Requisição inválida",
+                HttpStatusCode.Conflict => "Conflito de estado ou unicidade violada",
+                HttpStatusCode.UnprocessableEntity => "Regra de negócio violada",
                 _ => "Erro interno do servidor"
             },
             Detail = exception.Message,

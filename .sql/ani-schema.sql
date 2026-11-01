@@ -63,11 +63,34 @@ CREATE UNIQUE INDEX [UX_Usuario_Email]
     ON [ani].[Usuario] ([Email])
     WHERE [Email] IS NOT NULL;
 
+CREATE TABLE [ani].[Sistema]
+(
+    [SistemaId]          BIGINT IDENTITY(1,1) NOT NULL,
+    [SistemaGuid]        UNIQUEIDENTIFIER NOT NULL
+        CONSTRAINT [DF_Sistema_SistemaGuid] DEFAULT (NEWSEQUENTIALID()),
+    [Codigo]             NVARCHAR(50) NOT NULL,
+    [Nome]               NVARCHAR(150) NOT NULL,
+    [Descricao]          NVARCHAR(500) NULL,
+    [Ativo]              BIT NOT NULL
+        CONSTRAINT [DF_Sistema_Ativo] DEFAULT (1),
+    [CriadoEmUtc]        DATETIME2(3) NOT NULL
+        CONSTRAINT [DF_Sistema_CriadoEmUtc] DEFAULT (SYSUTCDATETIME()),
+    [AtualizadoEmUtc]    DATETIME2(3) NULL,
+    CONSTRAINT [PK_Sistema] PRIMARY KEY CLUSTERED ([SistemaId])
+);
+
+CREATE UNIQUE INDEX [UX_Sistema_SistemaGuid]
+    ON [ani].[Sistema] ([SistemaGuid]);
+
+CREATE UNIQUE INDEX [UX_Sistema_Codigo]
+    ON [ani].[Sistema] ([Codigo]);
+
 CREATE TABLE [ani].[Perfil]
 (
     [PerfilId]           BIGINT IDENTITY(1,1) NOT NULL,
     [PerfilGuid]         UNIQUEIDENTIFIER NOT NULL
         CONSTRAINT [DF_Perfil_PerfilGuid] DEFAULT (NEWSEQUENTIALID()),
+    [SistemaId]          BIGINT NOT NULL,
     [Nome]               NVARCHAR(100) NOT NULL,
     [Descricao]          NVARCHAR(500) NULL,
     [Ativo]              BIT NOT NULL
@@ -75,14 +98,19 @@ CREATE TABLE [ani].[Perfil]
     [CriadoEmUtc]        DATETIME2(3) NOT NULL
         CONSTRAINT [DF_Perfil_CriadoEmUtc] DEFAULT (SYSUTCDATETIME()),
     [AtualizadoEmUtc]    DATETIME2(3) NULL,
-    CONSTRAINT [PK_Perfil] PRIMARY KEY CLUSTERED ([PerfilId])
+    CONSTRAINT [PK_Perfil] PRIMARY KEY CLUSTERED ([PerfilId]),
+    CONSTRAINT [FK_Perfil_Sistema]
+        FOREIGN KEY ([SistemaId]) REFERENCES [ani].[Sistema] ([SistemaId])
 );
 
 CREATE UNIQUE INDEX [UX_Perfil_PerfilGuid]
     ON [ani].[Perfil] ([PerfilGuid]);
 
-CREATE UNIQUE INDEX [UX_Perfil_Nome]
-    ON [ani].[Perfil] ([Nome]);
+CREATE UNIQUE INDEX [UX_Perfil_Sistema_Nome]
+    ON [ani].[Perfil] ([SistemaId], [Nome]);
+
+CREATE INDEX [IX_Perfil_SistemaId]
+    ON [ani].[Perfil] ([SistemaId]);
 
 CREATE TABLE [ani].[Permissao]
 (
@@ -116,6 +144,7 @@ CREATE TABLE [ani].[UsuarioPerfil]
         CONSTRAINT [DF_UsuarioPerfil_UsuarioPerfilGuid] DEFAULT (NEWSEQUENTIALID()),
     [UsuarioId]              BIGINT NOT NULL,
     [PerfilId]               BIGINT NOT NULL,
+    [SistemaId]              BIGINT NOT NULL,
     [ConcedidoPorUsuarioId]  BIGINT NULL,
     [ConcedidoEmUtc]         DATETIME2(3) NOT NULL
         CONSTRAINT [DF_UsuarioPerfil_ConcedidoEmUtc] DEFAULT (SYSUTCDATETIME()),
@@ -126,6 +155,8 @@ CREATE TABLE [ani].[UsuarioPerfil]
         FOREIGN KEY ([UsuarioId]) REFERENCES [ani].[Usuario] ([UsuarioId]),
     CONSTRAINT [FK_UsuarioPerfil_Perfil]
         FOREIGN KEY ([PerfilId]) REFERENCES [ani].[Perfil] ([PerfilId]),
+    CONSTRAINT [FK_UsuarioPerfil_Sistema]
+        FOREIGN KEY ([SistemaId]) REFERENCES [ani].[Sistema] ([SistemaId]),
     CONSTRAINT [FK_UsuarioPerfil_ConcedidoPor]
         FOREIGN KEY ([ConcedidoPorUsuarioId]) REFERENCES [ani].[Usuario] ([UsuarioId]),
     CONSTRAINT [FK_UsuarioPerfil_RevogadoPor]
@@ -137,12 +168,16 @@ CREATE TABLE [ani].[UsuarioPerfil]
 CREATE UNIQUE INDEX [UX_UsuarioPerfil_UsuarioPerfilGuid]
     ON [ani].[UsuarioPerfil] ([UsuarioPerfilGuid]);
 
-CREATE UNIQUE INDEX [UX_UsuarioPerfil_Ativo]
-    ON [ani].[UsuarioPerfil] ([UsuarioId], [PerfilId])
+-- Regra de Integridade: Usuário não pode ter mais de um perfil no mesmo sistema
+CREATE UNIQUE INDEX [UX_UsuarioPerfil_UsuarioSistema_Ativo]
+    ON [ani].[UsuarioPerfil] ([UsuarioId], [SistemaId])
     WHERE [RevogadoEmUtc] IS NULL;
 
 CREATE INDEX [IX_UsuarioPerfil_PerfilId]
     ON [ani].[UsuarioPerfil] ([PerfilId], [UsuarioId]);
+
+CREATE INDEX [IX_UsuarioPerfil_SistemaId]
+    ON [ani].[UsuarioPerfil] ([SistemaId]);
 
 CREATE TABLE [ani].[PerfilPermissao]
 (

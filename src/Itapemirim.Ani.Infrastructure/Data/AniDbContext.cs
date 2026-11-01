@@ -8,6 +8,7 @@ public class AniDbContext : DbContext, IUnitOfWork
 {
     public AniDbContext(DbContextOptions<AniDbContext> options) : base(options) { }
 
+    public DbSet<Sistema> Sistemas => Set<Sistema>();
     public DbSet<Usuario> Usuarios => Set<Usuario>();
     public DbSet<Perfil> Perfis => Set<Perfil>();
     public DbSet<Permissao> Permissoes => Set<Permissao>();

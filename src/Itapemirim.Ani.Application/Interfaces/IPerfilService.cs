@@ -5,7 +5,7 @@ using Itapemirim.Ani.Application.DTOs.Permissoes;
 
 public interface IPerfilService
 {
-    Task<IEnumerable<PerfilResponse>> ListarAsync(bool apenasAtivos = false, CancellationToken ct = default);
+    Task<IEnumerable<PerfilResponse>> ListarAsync(bool apenasAtivos = false, Guid? sistemaGuid = null, CancellationToken ct = default);
     Task<PerfilResponse> ObterPorGuidAsync(Guid guid, CancellationToken ct = default);
     Task<PerfilResponse> CriarAsync(PerfilCreateRequest request, CancellationToken ct = default);
     Task<PerfilResponse> AtualizarAsync(Guid guid, PerfilUpdateRequest request, CancellationToken ct = default);

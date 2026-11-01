@@ -6,6 +6,7 @@ public class UsuarioPerfil
     public Guid UsuarioPerfilGuid { get; private set; }
     public long UsuarioId { get; private set; }
     public long PerfilId { get; private set; }
+    public long SistemaId { get; private set; }
     public long? ConcedidoPorUsuarioId { get; private set; }
     public DateTime ConcedidoEmUtc { get; private set; }
     public long? RevogadoPorUsuarioId { get; private set; }
@@ -13,6 +14,7 @@ public class UsuarioPerfil
 
     public Usuario Usuario { get; private set; } = null!;
     public Perfil Perfil { get; private set; } = null!;
+    public Sistema Sistema { get; private set; } = null!;
     public Usuario? ConcedidoPor { get; private set; }
     public Usuario? RevogadoPor { get; private set; }
 
@@ -20,11 +22,12 @@ public class UsuarioPerfil
 
     protected UsuarioPerfil() { }
 
-    public UsuarioPerfil(long usuarioId, long perfilId, long? concedidoPorUsuarioId)
+    public UsuarioPerfil(long usuarioId, long perfilId, long sistemaId, long? concedidoPorUsuarioId)
     {
         UsuarioPerfilGuid = Guid.NewGuid();
         UsuarioId = usuarioId;
         PerfilId = perfilId;
+        SistemaId = sistemaId;
         ConcedidoPorUsuarioId = concedidoPorUsuarioId;
         ConcedidoEmUtc = DateTime.UtcNow;
     }

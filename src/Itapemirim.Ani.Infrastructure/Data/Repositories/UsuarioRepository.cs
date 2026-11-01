@@ -16,8 +16,13 @@ public class UsuarioRepository : IUsuarioRepository
         return await _db.Usuarios
             .Include(u => u.PerfisAssociados)
                 .ThenInclude(up => up.Perfil)
+                    .ThenInclude(p => p.Sistema)
+            .Include(u => u.PerfisAssociados)
+                .ThenInclude(up => up.Perfil)
                     .ThenInclude(p => p.Permissoes)
                         .ThenInclude(pp => pp.Permissao)
+            .Include(u => u.PerfisAssociados)
+                .ThenInclude(up => up.Sistema)
             .FirstOrDefaultAsync(u => u.UsuarioId == id, ct);
     }
 
@@ -26,8 +31,13 @@ public class UsuarioRepository : IUsuarioRepository
         return await _db.Usuarios
             .Include(u => u.PerfisAssociados)
                 .ThenInclude(up => up.Perfil)
+                    .ThenInclude(p => p.Sistema)
+            .Include(u => u.PerfisAssociados)
+                .ThenInclude(up => up.Perfil)
                     .ThenInclude(p => p.Permissoes)
                         .ThenInclude(pp => pp.Permissao)
+            .Include(u => u.PerfisAssociados)
+                .ThenInclude(up => up.Sistema)
             .FirstOrDefaultAsync(u => u.UsuarioGuid == guid, ct);
     }
 
@@ -36,8 +46,13 @@ public class UsuarioRepository : IUsuarioRepository
         return await _db.Usuarios
             .Include(u => u.PerfisAssociados)
                 .ThenInclude(up => up.Perfil)
+                    .ThenInclude(p => p.Sistema)
+            .Include(u => u.PerfisAssociados)
+                .ThenInclude(up => up.Perfil)
                     .ThenInclude(p => p.Permissoes)
                         .ThenInclude(pp => pp.Permissao)
+            .Include(u => u.PerfisAssociados)
+                .ThenInclude(up => up.Sistema)
             .FirstOrDefaultAsync(u => u.Login == login, ct);
     }
 
@@ -64,6 +79,7 @@ public class UsuarioRepository : IUsuarioRepository
         var query = _db.Usuarios
             .Include(u => u.PerfisAssociados)
                 .ThenInclude(up => up.Perfil)
+                    .ThenInclude(p => p.Sistema)
             .AsNoTracking()
             .AsQueryable();
 

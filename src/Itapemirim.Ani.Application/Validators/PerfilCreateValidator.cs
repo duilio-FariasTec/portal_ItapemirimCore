@@ -7,12 +7,15 @@ public class PerfilCreateValidator : AbstractValidator<PerfilCreateRequest>
 {
     public PerfilCreateValidator()
     {
+        RuleFor(x => x.SistemaId)
+            .NotEmpty().WithMessage("O identificador do sistema (SistemaId) é obrigatório.");
+
         RuleFor(x => x.Nome)
-            .NotEmpty().WithMessage("O nome do perfil Ã© obrigatÃ³rio.")
-            .MaximumLength(100).WithMessage("O nome deve ter no mÃ¡ximo 100 caracteres.");
+            .NotEmpty().WithMessage("O nome do perfil é obrigatório.")
+            .MaximumLength(100).WithMessage("O nome deve ter no máximo 100 caracteres.");
 
         RuleFor(x => x.Descricao)
-            .MaximumLength(500).WithMessage("A descriÃ§Ã£o deve ter no mÃ¡ximo 500 caracteres.")
+            .MaximumLength(500).WithMessage("A descrição deve ter no máximo 500 caracteres.")
             .When(x => !string.IsNullOrWhiteSpace(x.Descricao));
     }
 }

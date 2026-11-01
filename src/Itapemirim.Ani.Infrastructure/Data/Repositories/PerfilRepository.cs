@@ -13,6 +13,7 @@ public class PerfilRepository : IPerfilRepository
     public async Task<Perfil?> GetByIdAsync(long id, CancellationToken ct = default)
     {
         return await _db.Perfis
+            .Include(p => p.Sistema)
             .Include(p => p.Permissoes)
                 .ThenInclude(pp => pp.Permissao)
             .FirstOrDefaultAsync(p => p.PerfilId == id, ct);
@@ -21,24 +22,35 @@ public class PerfilRepository : IPerfilRepository
     public async Task<Perfil?> GetByGuidAsync(Guid guid, CancellationToken ct = default)
     {
         return await _db.Perfis
+            .Include(p => p.Sistema)
             .Include(p => p.Permissoes)
                 .ThenInclude(pp => pp.Permissao)
             .FirstOrDefaultAsync(p => p.PerfilGuid == guid, ct);
     }
 
-    public async Task<bool> ExistsNomeAsync(string nome, long? ignorarPerfilId = null, CancellationToken ct = default)
+    public async Task<bool> ExistsNomeNoSistemaAsync(string nome, long sistemaId, long? ignorarPerfilId = null, CancellationToken ct = default)
     {
+        var nomeTrim = nome.Trim().ToLower();
         return await _db.Perfis
-            .AnyAsync(p => p.Nome == nome && (!ignorarPerfilId.HasValue || p.PerfilId != ignorarPerfilId.Value), ct);
+            .AnyAsync(p => p.SistemaId == sistemaId
+                        && p.Nome.ToLower() == nomeTrim
+                        && (!ignorarPerfilId.HasValue || p.PerfilId != ignorarPerfilId.Value), ct);
     }
 
-    public async Task<IEnumerable<Perfil>> GetAllAsync(bool apenasAtivos = false, CancellationToken ct = default)
+    public async Task<IEnumerable<Perfil>> GetAllAsync(bool apenasAtivos = false, long? sistemaId = null, CancellationToken ct = default)
     {
-        var query = _db.Perfis.AsNoTracking().AsQueryable();
+        var query = _db.Perfis
+            .Include(p => p.Sistema)
+            .AsNoTracking()
+            .AsQueryable();
+
         if (apenasAtivos)
             query = query.Where(p => p.Ativo);
 
-        return await query.OrderBy(p => p.Nome).ToListAsync(ct);
+        if (sistemaId.HasValue)
+            query = query.Where(p => p.SistemaId == sistemaId.Value);
+
+        return await query.OrderBy(p => p.Sistema.Nome).ThenBy(p => p.Nome).ToListAsync(ct);
     }
 
     public async Task AddAsync(Perfil perfil, CancellationToken ct = default)

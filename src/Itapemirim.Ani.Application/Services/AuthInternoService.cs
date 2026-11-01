@@ -3,6 +3,7 @@ namespace Itapemirim.Ani.Application.Services;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 using Itapemirim.Ani.Application.DTOs.Auth;
 using Itapemirim.Ani.Application.Interfaces;
 using Itapemirim.Ani.Domain.Enums;
@@ -47,10 +48,36 @@ public class AuthInternoService : IAuthInternoService
         }
 
         var perfisAtivos = usuario.PerfisAssociados
-            .Where(up => up.EstaAtivo && up.Perfil.Ativo)
+            .Where(up => up.EstaAtivo && up.Perfil.Ativo && (up.Perfil.Sistema == null || up.Perfil.Sistema.Ativo))
             .Select(up => up.Perfil)
             .DistinctBy(p => p.PerfilId)
             .ToList();
+
+        if (!string.IsNullOrWhiteSpace(request.SistemaCodigo))
+        {
+            var sistemaAlvo = request.SistemaCodigo.Trim().ToUpperInvariant();
+            var temAcessoAoSistema = perfisAtivos.Any(p => p.Sistema?.Codigo == sistemaAlvo);
+            if (!temAcessoAoSistema)
+            {
+                await _auditoria.RegistrarAsync(TipoAcaoAuditoria.ALTERACAO, "SessaoLogin", request.Login, ResultadoAuditoria.FALHA, ct);
+                throw new RegraNegocioException($"Usuário '{usuario.Login}' não possui acesso ativo ao sistema '{sistemaAlvo}'.");
+            }
+
+            perfisAtivos = perfisAtivos.Where(p => p.Sistema?.Codigo == sistemaAlvo).ToList();
+        }
+
+        var sistemasDto = perfisAtivos.Select(p => new SistemaAcessoResponse(
+            p.Sistema?.SistemaGuid ?? Guid.Empty,
+            p.Sistema?.Codigo ?? string.Empty,
+            p.Sistema?.Nome ?? string.Empty,
+            p.PerfilGuid,
+            p.Nome,
+            p.Permissoes
+                .Where(pp => pp.EstaAtivo && pp.Permissao.Ativo)
+                .Select(pp => pp.Permissao.Codigo)
+                .Distinct()
+                .ToList()
+        )).ToList();
 
         var perfisDto = perfisAtivos.Select(p =>
         {
@@ -73,6 +100,9 @@ public class AuthInternoService : IAuthInternoService
                 p.PerfilGuid,
                 p.Nome,
                 p.Descricao,
+                p.Sistema?.SistemaGuid ?? Guid.Empty,
+                p.Sistema?.Codigo ?? string.Empty,
+                p.Sistema?.Nome ?? string.Empty,
                 permissoesDoPerfil
             );
         }).ToList();
@@ -104,6 +134,7 @@ public class AuthInternoService : IAuthInternoService
             usuario.Login,
             usuario.Email,
             usuario.Status.ToString(),
+            sistemasDto,
             perfisDto,
             permissoesConsolidadasDto,
             roles,
@@ -134,6 +165,24 @@ public class AuthInternoService : IAuthInternoService
             claims.Add(new Claim(JwtRegisteredClaimNames.Email, usuarioAuth.Email));
         }
 
+        if (!string.IsNullOrWhiteSpace(request.SistemaCodigo))
+        {
+            claims.Add(new Claim("current_system", request.SistemaCodigo.Trim().ToUpperInvariant()));
+        }
+
+        // Claims segregadas por sistema
+        foreach (var sis in usuarioAuth.Sistemas)
+        {
+            claims.Add(new Claim("system", sis.Codigo));
+            claims.Add(new Claim("system_role", $"{sis.Codigo}:{sis.PerfilNome}"));
+
+            foreach (var perm in sis.Permissoes)
+            {
+                claims.Add(new Claim("permission", $"{sis.Codigo}:{perm}"));
+            }
+        }
+
+        // Claims globais/convencionais
         foreach (var role in usuarioAuth.Roles)
         {
             claims.Add(new Claim(ClaimTypes.Role, role));
@@ -144,6 +193,15 @@ public class AuthInternoService : IAuthInternoService
         {
             claims.Add(new Claim("permission", permissao));
         }
+
+        // Payload estruturado em JSON para clientes que preferem deserialização direta
+        var sistemasJson = JsonSerializer.Serialize(usuarioAuth.Sistemas.Select(s => new
+        {
+            sistema = s.Codigo,
+            perfil = s.PerfilNome,
+            permissoes = s.Permissoes
+        }));
+        claims.Add(new Claim("systems_access", sistemasJson, JsonClaimValueTypes.JsonArray));
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

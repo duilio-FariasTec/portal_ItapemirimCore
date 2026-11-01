@@ -44,22 +44,38 @@ if (app.Environment.IsDevelopment())
         c.RoutePrefix = string.Empty;
     });
 
-    // Garante que o banco SQLite seja criado automaticamente no primeiro run
+    // Garante que o banco SQLite seja criado/atualizado com o schema atualizado
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AniDbContext>();
-    db.Database.EnsureCreated();
 
     if (db.Database.IsSqlite())
     {
+        bool sistemaExiste = false;
         try
         {
-            db.Database.ExecuteSqlRaw("ALTER TABLE Permissao ADD COLUMN DscUrl TEXT NULL;");
+            using var cmd = db.Database.GetDbConnection().CreateCommand();
+            cmd.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Sistema';";
+            db.Database.OpenConnection();
+            var count = Convert.ToInt32(cmd.ExecuteScalar());
+            sistemaExiste = count > 0;
         }
         catch
         {
-            // Coluna já existe ou tabela criada recentemente com o schema atualizado
+            // Conexão ou tabela não existente
+        }
+        finally
+        {
+            db.Database.CloseConnection();
+            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+        }
+
+        if (!sistemaExiste)
+        {
+            db.Database.EnsureDeleted();
         }
     }
+
+    db.Database.EnsureCreated();
 }
 
 // Redireciona HTTPS apenas fora de containers (containers rodam HTTP interno na porta 8080 com terminação TLS no Load Balancer/CloudFront)

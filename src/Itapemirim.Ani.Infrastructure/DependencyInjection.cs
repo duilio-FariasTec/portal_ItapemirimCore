@@ -38,6 +38,7 @@ public static class DependencyInjection
 
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<AniDbContext>());
 
+        services.AddScoped<ISistemaRepository, SistemaRepository>();
         services.AddScoped<IUsuarioRepository, UsuarioRepository>();
         services.AddScoped<IPerfilRepository, PerfilRepository>();
         services.AddScoped<IPermissaoRepository, PermissaoRepository>();
