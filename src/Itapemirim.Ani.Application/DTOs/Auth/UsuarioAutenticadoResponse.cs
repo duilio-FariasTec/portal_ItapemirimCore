@@ -6,6 +6,8 @@ public record UsuarioAutenticadoResponse(
     string Login,
     string? Email,
     string Status,
-    List<string> Perfis,
-    List<string> Permissoes
+    List<PerfilUsuarioAutenticadoResponse> Perfis,
+    List<PermissaoUsuarioAutenticadoResponse> Permissoes,
+    List<string> Roles,
+    List<string> PermissoesCodigos
 );

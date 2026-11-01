@@ -682,6 +682,31 @@ public record ValidarCredenciaisRequest(
 );
 '@
 
+Write-Utf8File "$root/src/Itapemirim.Ani.Application/DTOs/Auth/PermissaoUsuarioAutenticadoResponse.cs" @'
+namespace Itapemirim.Ani.Application.DTOs.Auth;
+
+public record PermissaoUsuarioAutenticadoResponse(
+    Guid Id,
+    string Codigo,
+    string Nome,
+    string? Descricao,
+    string Recurso,
+    string Acao,
+    string? DscUrl
+);
+'@
+
+Write-Utf8File "$root/src/Itapemirim.Ani.Application/DTOs/Auth/PerfilUsuarioAutenticadoResponse.cs" @'
+namespace Itapemirim.Ani.Application.DTOs.Auth;
+
+public record PerfilUsuarioAutenticadoResponse(
+    Guid Id,
+    string Nome,
+    string? Descricao,
+    List<PermissaoUsuarioAutenticadoResponse> Permissoes
+);
+'@
+
 Write-Utf8File "$root/src/Itapemirim.Ani.Application/DTOs/Auth/UsuarioAutenticadoResponse.cs" @'
 namespace Itapemirim.Ani.Application.DTOs.Auth;
 
@@ -691,8 +716,10 @@ public record UsuarioAutenticadoResponse(
     string Login,
     string? Email,
     string Status,
-    List<string> Perfis,
-    List<string> Permissoes
+    List<PerfilUsuarioAutenticadoResponse> Perfis,
+    List<PermissaoUsuarioAutenticadoResponse> Permissoes,
+    List<string> Roles,
+    List<string> PermissoesCodigos
 );
 '@
 
@@ -1416,19 +1443,55 @@ public class AuthInternoService : IAuthInternoService
             throw new RegraNegocioException($"Usuário não pode se autenticar pois está com status '{usuario.Status}'.");
         }
 
-        var perfis = usuario.PerfisAssociados
+        var perfisAtivos = usuario.PerfisAssociados
             .Where(up => up.EstaAtivo && up.Perfil.Ativo)
-            .Select(up => up.Perfil.Nome)
-            .Distinct()
+            .Select(up => up.Perfil)
+            .DistinctBy(p => p.PerfilId)
             .ToList();
 
-        var permissoes = usuario.PerfisAssociados
-            .Where(up => up.EstaAtivo && up.Perfil.Ativo)
-            .SelectMany(up => up.Perfil.Permissoes)
+        var perfisDto = perfisAtivos.Select(p =>
+        {
+            var permissoesDoPerfil = p.Permissoes
+                .Where(pp => pp.EstaAtivo && pp.Permissao.Ativo)
+                .Select(pp => pp.Permissao)
+                .DistinctBy(perm => perm.PermissaoId)
+                .Select(perm => new PermissaoUsuarioAutenticadoResponse(
+                    perm.PermissaoGuid,
+                    perm.Codigo,
+                    perm.Nome,
+                    perm.Descricao,
+                    perm.Recurso,
+                    perm.Acao,
+                    perm.DscUrl
+                ))
+                .ToList();
+
+            return new PerfilUsuarioAutenticadoResponse(
+                p.PerfilGuid,
+                p.Nome,
+                p.Descricao,
+                permissoesDoPerfil
+            );
+        }).ToList();
+
+        var permissoesConsolidadasDto = perfisAtivos
+            .SelectMany(p => p.Permissoes)
             .Where(pp => pp.EstaAtivo && pp.Permissao.Ativo)
-            .Select(pp => pp.Permissao.Codigo)
-            .Distinct()
+            .Select(pp => pp.Permissao)
+            .DistinctBy(perm => perm.PermissaoId)
+            .Select(perm => new PermissaoUsuarioAutenticadoResponse(
+                perm.PermissaoGuid,
+                perm.Codigo,
+                perm.Nome,
+                perm.Descricao,
+                perm.Recurso,
+                perm.Acao,
+                perm.DscUrl
+            ))
             .ToList();
+
+        var roles = perfisAtivos.Select(p => p.Nome).Distinct().ToList();
+        var permissoesCodigos = permissoesConsolidadasDto.Select(p => p.Codigo).Distinct().ToList();
 
         await _auditoria.RegistrarAsync(TipoAcaoAuditoria.ALTERACAO, "SessaoLogin", usuario.UsuarioGuid.ToString(), ResultadoAuditoria.SUCESSO, ct);
 
@@ -1438,8 +1501,10 @@ public class AuthInternoService : IAuthInternoService
             usuario.Login,
             usuario.Email,
             usuario.Status.ToString(),
-            perfis,
-            permissoes
+            perfisDto,
+            permissoesConsolidadasDto,
+            roles,
+            permissoesCodigos
         );
     }
 }

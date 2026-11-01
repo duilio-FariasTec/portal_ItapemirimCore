@@ -46,19 +46,55 @@ public class AuthInternoService : IAuthInternoService
             throw new RegraNegocioException($"Usuário não pode se autenticar pois está com status '{usuario.Status}'.");
         }
 
-        var perfis = usuario.PerfisAssociados
+        var perfisAtivos = usuario.PerfisAssociados
             .Where(up => up.EstaAtivo && up.Perfil.Ativo)
-            .Select(up => up.Perfil.Nome)
-            .Distinct()
+            .Select(up => up.Perfil)
+            .DistinctBy(p => p.PerfilId)
             .ToList();
 
-        var permissoes = usuario.PerfisAssociados
-            .Where(up => up.EstaAtivo && up.Perfil.Ativo)
-            .SelectMany(up => up.Perfil.Permissoes)
+        var perfisDto = perfisAtivos.Select(p =>
+        {
+            var permissoesDoPerfil = p.Permissoes
+                .Where(pp => pp.EstaAtivo && pp.Permissao.Ativo)
+                .Select(pp => pp.Permissao)
+                .DistinctBy(perm => perm.PermissaoId)
+                .Select(perm => new PermissaoUsuarioAutenticadoResponse(
+                    perm.PermissaoGuid,
+                    perm.Codigo,
+                    perm.Nome,
+                    perm.Descricao,
+                    perm.Recurso,
+                    perm.Acao,
+                    perm.DscUrl
+                ))
+                .ToList();
+
+            return new PerfilUsuarioAutenticadoResponse(
+                p.PerfilGuid,
+                p.Nome,
+                p.Descricao,
+                permissoesDoPerfil
+            );
+        }).ToList();
+
+        var permissoesConsolidadasDto = perfisAtivos
+            .SelectMany(p => p.Permissoes)
             .Where(pp => pp.EstaAtivo && pp.Permissao.Ativo)
-            .Select(pp => pp.Permissao.Codigo)
-            .Distinct()
+            .Select(pp => pp.Permissao)
+            .DistinctBy(perm => perm.PermissaoId)
+            .Select(perm => new PermissaoUsuarioAutenticadoResponse(
+                perm.PermissaoGuid,
+                perm.Codigo,
+                perm.Nome,
+                perm.Descricao,
+                perm.Recurso,
+                perm.Acao,
+                perm.DscUrl
+            ))
             .ToList();
+
+        var roles = perfisAtivos.Select(p => p.Nome).Distinct().ToList();
+        var permissoesCodigos = permissoesConsolidadasDto.Select(p => p.Codigo).Distinct().ToList();
 
         await _auditoria.RegistrarAsync(TipoAcaoAuditoria.ALTERACAO, "SessaoLogin", usuario.UsuarioGuid.ToString(), ResultadoAuditoria.SUCESSO, ct);
 
@@ -68,8 +104,10 @@ public class AuthInternoService : IAuthInternoService
             usuario.Login,
             usuario.Email,
             usuario.Status.ToString(),
-            perfis,
-            permissoes
+            perfisDto,
+            permissoesConsolidadasDto,
+            roles,
+            permissoesCodigos
         );
     }
 
@@ -96,13 +134,13 @@ public class AuthInternoService : IAuthInternoService
             claims.Add(new Claim(JwtRegisteredClaimNames.Email, usuarioAuth.Email));
         }
 
-        foreach (var perfil in usuarioAuth.Perfis)
+        foreach (var role in usuarioAuth.Roles)
         {
-            claims.Add(new Claim(ClaimTypes.Role, perfil));
-            claims.Add(new Claim("role", perfil));
+            claims.Add(new Claim(ClaimTypes.Role, role));
+            claims.Add(new Claim("role", role));
         }
 
-        foreach (var permissao in usuarioAuth.Permissoes)
+        foreach (var permissao in usuarioAuth.PermissoesCodigos)
         {
             claims.Add(new Claim("permission", permissao));
         }
