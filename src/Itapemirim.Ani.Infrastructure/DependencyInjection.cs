@@ -48,6 +48,7 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();
 
         // Provedor de E-mail desacoplado via Feature Flag / Configuração (File ou Smtp)
+        services.AddScoped<FileEmailService>();
         var emailProvider = configuration["Email:Provider"] ?? "File";
         if (emailProvider.Equals("Smtp", StringComparison.OrdinalIgnoreCase))
         {
@@ -55,7 +56,7 @@ public static class DependencyInjection
         }
         else
         {
-            services.AddScoped<IEmailService, FileEmailService>();
+            services.AddScoped<IEmailService>(sp => sp.GetRequiredService<FileEmailService>());
         }
 
         return services;

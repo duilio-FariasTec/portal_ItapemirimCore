@@ -14,6 +14,14 @@ services:
       - Jwt__SecretKey=Itapemirim_PortalCore_SuperSecret_JwtKey_2026_Minimum32Bytes!
       - Jwt__Issuer=PortalItapemirimCore
       - Jwt__Audience=PortalItapemirimApp
+      - Email__Provider=Smtp
+      - Email__Smtp__Host=8a9nqcgc8tra.fips.wmjb.mail-manager-smtp.amazonaws.com
+      - Email__Smtp__Port=587
+      - Email__Smtp__EnableSsl=true
+      - Email__Smtp__Username=inp-xd5ohltouj5fa2iqx43vseor
+      - Email__Smtp__Password=u7}UqppEna|aZOU1q7+_5%NHmsg8VUlz
+      - Email__Smtp__FromAddress=duilio@fariastecnologia.com.br
+      - Email__Smtp__FromName=Portal Corporativo ANI — Grupo Itapemirim
     volumes:
       - ani-sqlite-data:/app/data
     restart: unless-stopped

@@ -11,21 +11,34 @@ public class SmtpEmailService : IEmailService
 {
     private readonly IConfiguration _configuration;
     private readonly ILogger<SmtpEmailService> _logger;
+    private readonly FileEmailService _fileEmailService;
 
-    public SmtpEmailService(IConfiguration configuration, ILogger<SmtpEmailService> logger)
+    public SmtpEmailService(
+        IConfiguration configuration,
+        ILogger<SmtpEmailService> logger,
+        FileEmailService fileEmailService)
     {
         _configuration = configuration;
         _logger = logger;
+        _fileEmailService = fileEmailService;
     }
 
     public async Task EnviarAsync(string destinatario, string assunto, string corpoHtml, CancellationToken ct = default)
     {
+        var alsoWriteToFile = !bool.TryParse(_configuration["Email:AlsoWriteToFile"], out var writeFile) || writeFile;
+        var fallbackToFileOnError = !bool.TryParse(_configuration["Email:FallbackToFileOnError"], out var fallback) || fallback;
+
+        if (alsoWriteToFile)
+        {
+            await _fileEmailService.EnviarAsync(destinatario, assunto, corpoHtml, ct);
+        }
+
         var host = _configuration["Email:Smtp:Host"];
         var port = int.TryParse(_configuration["Email:Smtp:Port"], out var p) ? p : 587;
         var enableSsl = !bool.TryParse(_configuration["Email:Smtp:EnableSsl"], out var ssl) || ssl;
         var username = _configuration["Email:Smtp:Username"];
         var password = _configuration["Email:Smtp:Password"];
-        var fromAddress = _configuration["Email:Smtp:FromAddress"] ?? "no-reply@itapemirim.com.br";
+        var fromAddress = _configuration["Email:Smtp:FromAddress"] ?? "duilio@fariastecnologia.com.br";
         var fromName = _configuration["Email:Smtp:FromName"] ?? "Portal Corporativo ANI — Grupo Itapemirim";
 
         if (string.IsNullOrWhiteSpace(host))
@@ -33,36 +46,57 @@ public class SmtpEmailService : IEmailService
             _logger.LogWarning(
                 "SmtpEmailService acionado, mas 'Email:Smtp:Host' não está configurado. E-mail para '{Destinatario}' não pôde ser despachado via rede.",
                 destinatario);
-            throw new InvalidOperationException("O servidor SMTP ('Email:Smtp:Host') não está configurado no ambiente.");
+            if (!alsoWriteToFile && fallbackToFileOnError)
+            {
+                await _fileEmailService.EnviarAsync(destinatario, assunto, corpoHtml, ct);
+            }
+            return;
         }
 
-        using var client = new SmtpClient(host, port)
+        try
         {
-            EnableSsl = enableSsl,
-            DeliveryMethod = SmtpDeliveryMethod.Network,
-            UseDefaultCredentials = false
-        };
+            using var client = new SmtpClient(host, port)
+            {
+                EnableSsl = enableSsl,
+                DeliveryMethod = SmtpDeliveryMethod.Network,
+                UseDefaultCredentials = false,
+                Timeout = 15000
+            };
 
-        if (!string.IsNullOrWhiteSpace(username) && !string.IsNullOrWhiteSpace(password))
-        {
-            client.Credentials = new NetworkCredential(username, password);
+            if (!string.IsNullOrWhiteSpace(username) && !string.IsNullOrWhiteSpace(password))
+            {
+                client.Credentials = new NetworkCredential(username, password);
+            }
+
+            using var mailMessage = new MailMessage
+            {
+                From = new MailAddress(fromAddress, fromName, Encoding.UTF8),
+                Subject = assunto,
+                SubjectEncoding = Encoding.UTF8,
+                Body = corpoHtml,
+                BodyEncoding = Encoding.UTF8,
+                IsBodyHtml = true
+            };
+
+            mailMessage.To.Add(new MailAddress(destinatario));
+
+            _logger.LogInformation("Enviando e-mail via AWS SES SMTP ({Host}:{Port}) para '{Destinatario}'...", host, port, destinatario);
+            await client.SendMailAsync(mailMessage, ct);
+            _logger.LogInformation("E-mail enviado via AWS SES SMTP com sucesso para '{Destinatario}'.", destinatario);
         }
-
-        using var mailMessage = new MailMessage
+        catch (Exception ex)
         {
-            From = new MailAddress(fromAddress, fromName, Encoding.UTF8),
-            Subject = assunto,
-            SubjectEncoding = Encoding.UTF8,
-            Body = corpoHtml,
-            BodyEncoding = Encoding.UTF8,
-            IsBodyHtml = true
-        };
+            _logger.LogError(ex, "Falha ao enviar e-mail via SMTP ({Host}:{Port}) para '{Destinatario}': {Message}", host, port, destinatario, ex.Message);
 
-        mailMessage.To.Add(new MailAddress(destinatario));
+            if (!fallbackToFileOnError)
+            {
+                throw;
+            }
 
-        _logger.LogInformation("Enviando e-mail via SMTP ({Host}:{Port}) para '{Destinatario}'...", host, port, destinatario);
-        await client.SendMailAsync(mailMessage, ct);
-        _logger.LogInformation("E-mail enviado via SMTP com sucesso para '{Destinatario}'.", destinatario);
+            if (!alsoWriteToFile)
+            {
+                await _fileEmailService.EnviarAsync(destinatario, assunto, corpoHtml, ct);
+            }
+        }
     }
 }
-
