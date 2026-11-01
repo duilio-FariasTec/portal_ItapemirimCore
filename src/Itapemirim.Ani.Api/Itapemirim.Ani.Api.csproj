@@ -20,4 +20,8 @@
     <ProjectReference Include="..\Itapemirim.Ani.Infrastructure\Itapemirim.Ani.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="ani.db" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
