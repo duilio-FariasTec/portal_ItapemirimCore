@@ -29,6 +29,15 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+// Modo CLI Offline: permite criar tabelas e inserir todos os dados padrão sem subir o servidor HTTP:
+// Uso: dotnet run --project src/Itapemirim.Ani.Api -- --seed-only [--reset-db]
+if (args.Any(a => a.Equals("--seed-only", StringComparison.OrdinalIgnoreCase)))
+{
+    var resetDb = args.Any(a => a.Equals("--reset-db", StringComparison.OrdinalIgnoreCase));
+    await Itapemirim.Ani.Api.DatabaseSeeder.SeedAsync(app.Services, resetDb);
+    return;
+}
+
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 

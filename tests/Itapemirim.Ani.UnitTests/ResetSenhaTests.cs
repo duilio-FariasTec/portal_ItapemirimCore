@@ -180,4 +180,50 @@ public class ResetSenhaTests
         Assert.Equal("BCRYPT_HASH(NovaSenhaForte@2026)", usuario.SenhaHash);
         Assert.Equal(ResultadoAuditoria.SUCESSO, auditoria.UltimoResultado);
     }
+
+    [Fact]
+    public void CriptografarEVoltarSenha_ComChaveConfigurada_DeveReverterParaSenhaOriginal()
+    {
+        var repo = new FakeUsuarioRepository();
+        var uow = new FakeUnitOfWork();
+        var hasher = new FakePasswordHasher();
+        var email = new FakeEmailService();
+        var auditoria = new FakeAuditoriaService();
+        var config = new FakeConfiguration(new Dictionary<string, string?>
+        {
+            ["PasswordSecurity:SecretKey"] = "Itapemirim_Ani_PasswordSecretKey_2026!"
+        });
+
+        var service = new AuthService(repo, uow, hasher, auditoria, email, config);
+
+        const string senhaOriginal = "Ita@2026#Forte";
+        var criptografada = service.CriptografarSenha(senhaOriginal);
+        var senhaRevertida = service.VoltarSenha(criptografada);
+
+        Assert.NotEqual(senhaOriginal, criptografada);
+        Assert.Equal(senhaOriginal, senhaRevertida);
+    }
+
+    [Fact]
+    public void GerarEVoltarSenhaReversivelSimples_ComChaveConfigurada_DeveReverterParaTextoOriginal()
+    {
+        var repo = new FakeUsuarioRepository();
+        var uow = new FakeUnitOfWork();
+        var hasher = new FakePasswordHasher();
+        var email = new FakeEmailService();
+        var auditoria = new FakeAuditoriaService();
+        var config = new FakeConfiguration(new Dictionary<string, string?>
+        {
+            ["PasswordSecurity:SecretKey"] = "Itapemirim_Ani_PasswordSecretKey_2026!"
+        });
+
+        var service = new AuthService(repo, uow, hasher, auditoria, email, config);
+
+        const string textoBase = "admin.master@2026";
+        var senhaGerada = service.GerarSenhaReversivelSimples(textoBase);
+        var revertida = service.VoltarSenhaReversivelSimples(senhaGerada);
+
+        Assert.NotEqual(textoBase, senhaGerada);
+        Assert.Equal(textoBase, revertida);
+    }
 }

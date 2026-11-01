@@ -337,33 +337,68 @@ public class AuthInternoService : IAuthInternoService
         return new TrocarSenhaResponse("Senha alterada com sucesso.", DateTime.UtcNow);
     }
 
-    private static string GerarSenhaTemporariaForte(int tamanho = 12)
+    private string GerarSenhaTemporariaForte(int tamanhoPadrao = 12)
     {
-        const string maiusculas = "ABCDEFGHJKLMNPQRSTUVWXYZ";
-        const string minusculas = "abcdefghijkmnopqrstuvwxyz";
-        const string digitos = "23456789";
-        const string especiais = "@#$!%*?&";
-        const string todos = maiusculas + minusculas + digitos + especiais;
+        var tamanho = int.TryParse(_configuration["PasswordSecurity:TempPasswordLength"], out var len) && len > 0
+            ? len
+            : tamanhoPadrao;
 
-        var chars = new char[tamanho];
-        chars[0] = maiusculas[RandomNumberGenerator.GetInt32(maiusculas.Length)];
-        chars[1] = minusculas[RandomNumberGenerator.GetInt32(minusculas.Length)];
-        chars[2] = digitos[RandomNumberGenerator.GetInt32(digitos.Length)];
-        chars[3] = especiais[RandomNumberGenerator.GetInt32(especiais.Length)];
+        const string caracteres = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789@#$!";
+        return RandomNumberGenerator.GetString(caracteres, tamanho);
+    }
 
-        for (int i = 4; i < tamanho; i++)
+    public string CriptografarSenha(string senhaPura)
+    {
+        var secret = _configuration["PasswordSecurity:SecretKey"] ?? "Itapemirim_Ani_PasswordSecretKey_2026!";
+
+        using var aes = Aes.Create();
+        aes.Key = SHA256.HashData(Encoding.UTF8.GetBytes(secret));
+        aes.IV = new byte[16];
+
+        var bytes = Encoding.UTF8.GetBytes(senhaPura);
+        var criptografado = aes.CreateEncryptor().TransformFinalBlock(bytes, 0, bytes.Length);
+        return Convert.ToBase64String(criptografado);
+    }
+
+    public string VoltarSenha(string senhaCriptografada)
+    {
+        var secret = _configuration["PasswordSecurity:SecretKey"] ?? "Itapemirim_Ani_PasswordSecretKey_2026!";
+
+        using var aes = Aes.Create();
+        aes.Key = SHA256.HashData(Encoding.UTF8.GetBytes(secret));
+        aes.IV = new byte[16];
+
+        var bytes = Convert.FromBase64String(senhaCriptografada);
+        var descriptografado = aes.CreateDecryptor().TransformFinalBlock(bytes, 0, bytes.Length);
+        return Encoding.UTF8.GetString(descriptografado);
+    }
+
+    public string GerarSenhaReversivelSimples(string textoOriginal)
+    {
+        var chave = _configuration["PasswordSecurity:SecretKey"] ?? "Itapemirim_Ani_PasswordSecretKey_2026!";
+        var dados = Encoding.UTF8.GetBytes(textoOriginal);
+        var chaveBytes = Encoding.UTF8.GetBytes(chave);
+
+        for (int i = 0; i < dados.Length; i++)
         {
-            chars[i] = todos[RandomNumberGenerator.GetInt32(todos.Length)];
+            dados[i] ^= chaveBytes[i % chaveBytes.Length];
         }
 
-        // Embaralhamento Fisher-Yates criptograficamente seguro
-        for (int i = chars.Length - 1; i > 0; i--)
+        return Convert.ToBase64String(dados);
+    }
+
+    public string VoltarSenhaReversivelSimples(string senhaGerada)
+    {
+        var chave = _configuration["PasswordSecurity:SecretKey"] ?? "Itapemirim_Ani_PasswordSecretKey_2026!";
+        var dados = Convert.FromBase64String(senhaGerada);
+        var chaveBytes = Encoding.UTF8.GetBytes(chave);
+
+        for (int i = 0; i < dados.Length; i++)
         {
-            int j = RandomNumberGenerator.GetInt32(i + 1);
-            (chars[i], chars[j]) = (chars[j], chars[i]);
+            dados[i] ^= chaveBytes[i % chaveBytes.Length];
         }
 
-        return new string(chars);
+        return Encoding.UTF8.GetString(dados);
     }
 
     private static string MontarTemplateHtmlResetSenha(Usuario usuario, string novaSenhaTemporaria)
